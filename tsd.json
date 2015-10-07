@@ -1,0 +1,72 @@
+{
+  "version": "v4",
+  "repo": "borisyankov/DefinitelyTyped",
+  "ref": "master",
+  "path": "typings",
+  "bundle": "typings/tsd.d.ts",
+  "installed": {
+    "node/node.d.ts": {
+      "commit": "421d6610bdb09e1015b71f5991d7a68d079eca21"
+    },
+    "react/react.d.ts": {
+      "commit": "421d6610bdb09e1015b71f5991d7a68d079eca21"
+    },
+    "webpack/webpack.d.ts": {
+      "commit": "421d6610bdb09e1015b71f5991d7a68d079eca21"
+    },
+    "glob/glob.d.ts": {
+      "commit": "421d6610bdb09e1015b71f5991d7a68d079eca21"
+    },
+    "minimatch/minimatch.d.ts": {
+      "commit": "421d6610bdb09e1015b71f5991d7a68d079eca21"
+    },
+    "serve-static/serve-static.d.ts": {
+      "commit": "421d6610bdb09e1015b71f5991d7a68d079eca21"
+    },
+    "mime/mime.d.ts": {
+      "commit": "421d6610bdb09e1015b71f5991d7a68d079eca21"
+    },
+    "thrift/thrift.d.ts": {
+      "commit": "16134c168d021351acb1673ee9659644fc58c424"
+    },
+    "cli-color/cli-color.d.ts": {
+      "commit": "961b76f37bdfcff459cab9ed9fd3f204f0633d5e"
+    },
+    "moment/moment-node.d.ts": {
+      "commit": "fc341765ebbb04b7109981a25dced01f488f4d94"
+    },
+    "express/express.d.ts": {
+      "commit": "fb2b3b1e068c9ff7d8f9b0851c08d37d96c95c38"
+    },
+    "body-parser/body-parser.d.ts": {
+      "commit": "7a3d6944036902996b87981e6150900952b35628"
+    },
+    "compression/compression.d.ts": {
+      "commit": "7a3d6944036902996b87981e6150900952b35628"
+    },
+    "cookie-parser/cookie-parser.d.ts": {
+      "commit": "7a3d6944036902996b87981e6150900952b35628"
+    },
+    "express-session/express-session.d.ts": {
+      "commit": "7a3d6944036902996b87981e6150900952b35628"
+    },
+    "node-uuid/node-uuid.d.ts": {
+      "commit": "78d36dd49b6b55b9fdfe61776a12bf05c8b07777"
+    },
+    "node-uuid/node-uuid-cjs.d.ts": {
+      "commit": "78d36dd49b6b55b9fdfe61776a12bf05c8b07777"
+    },
+    "node-uuid/node-uuid-base.d.ts": {
+      "commit": "78d36dd49b6b55b9fdfe61776a12bf05c8b07777"
+    },
+    "request/request.d.ts": {
+      "commit": "78d36dd49b6b55b9fdfe61776a12bf05c8b07777"
+    },
+    "form-data/form-data.d.ts": {
+      "commit": "78d36dd49b6b55b9fdfe61776a12bf05c8b07777"
+    },
+    "gm/gm.d.ts": {
+      "commit": "e5a27ea95e47b95333784f1f0d590127b4e39a89"
+    }
+  }
+}

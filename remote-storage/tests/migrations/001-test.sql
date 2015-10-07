@@ -1,0 +1,1 @@
+CREATE INDEX idx_test5_idx ON test5 (id);

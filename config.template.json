@@ -1,0 +1,10 @@
+{
+  "port": 8089,
+  "isProduction": false,
+  "secret": "abcdefg",
+  "sessionTtlSecs": 2592000,
+  "evernoteConfig": {
+    "consumerKey": "",
+    "consumerSecret": ""
+  }
+}

@@ -1,0 +1,58 @@
+import { ClozeIdentifier, Note, Resource } from "../study-model/note-model";
+import { Schedule } from "../study-model/schedule-model";
+import { arrayOf, arrayWithSome } from "../model-helpers/model-helpers";
+
+export class ScheduledClozeIdentifier {
+  clozeIdentifier = new ClozeIdentifier();
+  noteVersion = 0;
+}
+
+export class ScheduleUpdate {
+  scheduledIdentifier = new ScheduledClozeIdentifier();
+  schedule = new Schedule();
+}
+
+export class UpdateScheduleRequest {
+  schedules = arrayOf(ScheduleUpdate);
+}
+
+export class UpdateScheduleResponse {
+  completed = arrayOf(ScheduledClozeIdentifier);
+}
+
+export class GetLatestNoteRequest {
+  noteId = "";
+  noteVersion = 0;
+}
+
+export class GetLatestNoteResponse {
+  note = new Note();
+  wasUpToDate = true;
+}
+
+export class GetResourceRequest {
+  resourceId = "";
+}
+
+export class GetResourceResponse {
+  compressedResource = new Resource();
+}
+
+export class FetchScheduleRequest {
+  requestedNum = 0;
+  studyFilters = arrayWithSome("");
+}
+
+export class FetchScheduleResponse {
+  notes = arrayOf(Note);
+  scheduled = arrayOf(ScheduledClozeIdentifier);
+  expires = 0;
+}
+
+export class SummaryStatsRequest {
+  studyFilters = arrayWithSome("");
+}
+
+export class SummaryStatsResponse {
+  dueToday = 0;
+}
