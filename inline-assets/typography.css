@@ -1,0 +1,18 @@
+body {
+    font-family: Goudy Old Style,Garamond,Big Caslon,Times New Roman,serif,Meiryo;
+    font-size: 18pt;
+    line-height: 1.2;
+    color: #584C46;
+    fill: #584C46;
+}
+
+a:visited, a:link, a:active {
+    font-weight: bold;
+    color: #65A8A6;
+    fill: #65A8A6;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
