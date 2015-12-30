@@ -10,7 +10,7 @@ export class Security {
 
   strictTransport = (req:express.Request, res:express.Response, next:Function) => {
     if (this.config.https) {
-      res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+      res.setHeader("Strict-Transport-Security", "max-age=31536000");
       if (req.header("x-forwarded-proto") != "https") {
         res.redirect("https://" + req.hostname + req.url);
         return;

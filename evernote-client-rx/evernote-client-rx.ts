@@ -128,6 +128,16 @@ export class EvernoteClientRx {
   private userStore:Evernote.UserStoreClient;
 
   forUser(user:User) {
+    if (user.developerToken) {
+      var login = new OauthLogin();
+      login.token = user.developerToken;
+      login.secret = undefined;
+      var config = new OAuthConfig();
+      config.consumerKey = undefined;
+      config.consumerSecret = undefined;
+      return new EvernoteClientRx(config, login, false, {}, {});
+    }
+
     return new EvernoteClientRx(this.oauthConfig, user.getEvernoteLogin(),
       this.isSandbox, this.concurrencyLimitCache, this.rateLimitCache);
   }

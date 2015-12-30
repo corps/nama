@@ -2,6 +2,7 @@ import { arrayOf } from "../model-helpers/model-helpers";
 
 export class User {
   id = -1;
+  developerToken = "";
   logins = arrayOf(OauthLogin);
   studyBook = new StudyBook();
 

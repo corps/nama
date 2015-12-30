@@ -1,5 +1,6 @@
 CREATE TABLE users (
-  id INTEGER NOT NULL PRIMARY KEY
+  id INTEGER NOT NULL PRIMARY KEY,
+  developerToken VARCHAR NULL
 );
 
 CREATE TABLE oauthLogins (

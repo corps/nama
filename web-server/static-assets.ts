@@ -10,7 +10,7 @@ export class StaticAssets {
 
   constructor(private config:WebServerConfig) {
     this.assets.use(compression());
-    if (!this.config.isProduction) {
+    if (!this.config.useCache) {
       this.assets.use((req, res, next) => {
         if (req.url.indexOf("app.appcache") != -1) {
           res.send("CACHE MANIFEST\n# " + Math.random() + "\nNETWORK:\n *")

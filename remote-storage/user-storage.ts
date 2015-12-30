@@ -5,6 +5,7 @@ import { DatabaseRx } from "../database-rx/database-rx";
 
 export interface UserRow {
   id: number
+  developerToken: string
 }
 
 export interface OauthLoginRow {
@@ -34,6 +35,7 @@ export class UserStorage {
         if (userRow == null) throw new Error("No user found by id " + userId);
         return tap(new User())((u:User) => {
           u.id = userId;
+          u.developerToken = userRow.developerToken || "";
 
           oauthLoginRows.forEach(login => {
             u.logins.push(tap(new OauthLogin())(l => {
