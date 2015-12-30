@@ -62,7 +62,8 @@ export class WebServer {
   protected scheduleStorage = cached(() => new MasterScheduleStorage(this.db));
   protected syncService = cached(
     () => new EvernoteSyncService(this.userStorage(), this.evernoteClient(), this.scheduleStorage()));
-  protected updateScheduleService = cached(() => new UpdateScheduleService(this.evernoteClient()));
+  protected updateScheduleService = cached(
+    () => new UpdateScheduleService(this.evernoteClient(), this.scheduleStorage()));
   protected summaryStatsService = cached(
     () => new SummaryStatsService(this.scheduleStorage(), this.evernoteClient(), this.syncService()));
   protected getResourceService = cached(() => new GetResourceService(this.evernoteClient()));

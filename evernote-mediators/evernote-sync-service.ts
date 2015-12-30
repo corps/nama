@@ -21,7 +21,7 @@ export class EvernoteSyncService {
   constructor(private userStorage:UserStorage,
               private evernoteClient:EvernoteClientRx,
               private scheduleStorage:MasterScheduleStorage,
-              private batchSize = 40,
+              private batchSize = 10,
               private defaultNotebookName = "弁SRS Study Book") {
   }
 
@@ -161,6 +161,10 @@ export class EvernoteSyncService {
 
     return Rx.Observable.merge(tap([] as Rx.Observable<any>[])(processes => {
       var markers = note.terms.map(term => term.marker);
+
+      processes.push(
+        this.scheduleStorage.recordNoteContents(evernote.guid, evernote.updateSequenceNum,
+          evernote.content));
 
       processes.push(this.scheduleStorage.deleteAllOtherTerms(note.id, markers, version));
 

@@ -42,7 +42,7 @@ QUnit.test("", (assert) => {
   var userStorage = new UserStorage(testObjects.db);
   var scheduleStorage = new MasterScheduleStorage(testObjects.db);
   var syncService = new EvernoteSyncService(userStorage, evernoteClient, scheduleStorage);
-  var updateService = new UpdateScheduleService(evernoteClient);
+  var updateService = new UpdateScheduleService(evernoteClient, scheduleStorage);
 
   var req = new UpdateScheduleRequest();
   var res = new UpdateScheduleResponse();

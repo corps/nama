@@ -16,6 +16,8 @@ import {DatabaseRx} from "../database-rx/database-rx";
 import {ScheduledStudy} from "../local-storage/local-study-storage";
 import {MasterScheduleStorage} from "../remote-storage/master-schedule-storage";
 import {XmlEntities} from "html-entities";
+import {mapEvernoteToNote} from "../evernote-mediators/map-evernote-to-note";
+import {ClozeIdentifier} from "../study-model/note-model";
 
 function encloseInEnml(body:string) {
   return `<?xml version='1.0' encoding='utf-8'?>
@@ -59,9 +61,7 @@ export function exportToEvernote(material:ImportMaterial, evernoteClient:Evernot
   var note = asNote(material);
   note.tagNames = ["Japanese"];
   note.notebookGuid = user.studyBook.guid;
-  return userClient.createNote(note).flatMap((note) => {
-    return userClient.getNote(note.guid);
-  })
+  return userClient.createNote(note);
 }
 
 if (require.main === module) {
@@ -90,7 +90,8 @@ if (require.main === module) {
     }).flatMap(([studyBookGuid, v]) => {
       if (studyBookGuid != user.studyBook.guid) {
         user.studyBook.guid = studyBookGuid;
-        return userStorage.addNewStudyBook(user.id, studyBookGuid, v);
+        return userStorage.addNewStudyBook(user.id, studyBookGuid, v)
+          .doOnNext((lastId) => user.studyBook.id = lastId);
       }
       return Rx.Observable.just(null);
     }).flatMap(() => {
@@ -112,10 +113,30 @@ if (require.main === module) {
 
         var processes = nextBatch.map(material => {
           return exportToEvernote(material, evernoteClient, user)
+            .flatMap((evernote) => {
+              return scheduleStorage.recordNoteContents(
+                evernote.guid, evernote.updateSequenceNum, evernote.content).flatMap(() => {
+                var note = mapEvernoteToNote(evernote);
+                var processes = [] as Rx.Observable<any>[];
+                for (var term of note.terms) {
+                  for (var cloze of term.clozes) {
+                    var identifier = ClozeIdentifier.of(note, term, cloze);
+                    processes.push(
+                      scheduleStorage.recordSchedule(user, evernote.updateSequenceNum, identifier,
+                        evernote.tagGuids || [], cloze.schedule));
+                  }
+                }
+
+                processes.push(
+                  userStorage.updateStudyBook(user.studyBook.id, evernote.updateSequenceNum));
+                return Rx.Observable.merge(processes);
+              })
+            }).ignoreElements().toArray()
             .doOnCompleted(() => {
               process.stdout.write(".");
               var mId = JSON.stringify(material).split("").sort().join("");
               ids[mId] = true;
+              fs.writeFileSync("ids.json", JSON.stringify(ids), {encoding: "utf-8"});
             }).doOnError((e) => {
               console.log("material", material, e);
             });

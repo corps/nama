@@ -30,11 +30,17 @@ export class FrontendSyncService {
     }
 
     var request = new apiModels.UpdateScheduleRequest();
-    request.schedules = updates;
+    request.schedules = updates.slice(0, 10);
 
     return this.updateSchedule.request(request, loadClientSession()).doOnNext(response => {
       this.studyStorage.storeUpdateScheduleResponse(response);
-    }).retry(3);
+    }).retry(3).flatMap(() => {
+      if (updates.length > 10) {
+        return this.syncUpdates();
+      }
+
+      return Rx.Observable.empty();
+    });
   }
 
   private fetchScheduleBatch():Rx.Observable<ScheduledStudy> {

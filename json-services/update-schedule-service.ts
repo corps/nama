@@ -8,9 +8,12 @@ import * as Rx from "rx";
 import {ScheduleUpdate} from "../api/api-models";
 import {NoteContentsMapper} from "../evernote-mediators/note-contents-mapper";
 import {Evernote} from "evernote";
+import {MasterScheduleStorage} from "../remote-storage/master-schedule-storage";
+import {NoteContentsRow} from "../remote-storage/master-schedule-storage";
 
 export class UpdateScheduleService implements ServiceHandler<UpdateScheduleRequest, UpdateScheduleResponse, User> {
-  constructor(private evernoteClient:EvernoteClientRx) {
+  constructor(private evernoteClient:EvernoteClientRx,
+              private schedulerStorage:MasterScheduleStorage) {
   }
 
   endpoint = UpdateSchedule;
@@ -27,17 +30,22 @@ export class UpdateScheduleService implements ServiceHandler<UpdateScheduleReque
       }
 
       return Rx.Observable.merge<any>(Object.keys(updatesByNoteId).map((noteId) => {
-        return userClient.getNote(noteId)
-          .flatMap((evernote:Evernote.Note) => {
-            var mapper = new NoteContentsMapper(evernote.content, updatesByNoteId[noteId]);
+        return this.schedulerStorage.getNoteContents(noteId)
+          .flatMap((noteContentsRow:NoteContentsRow) => {
+            var mapper = new NoteContentsMapper(noteContentsRow.contents, updatesByNoteId[noteId]);
             mapper.map();
+            var evernote = new Evernote.Note();
+            evernote.updateSequenceNum = noteContentsRow.noteVersion;
             evernote.content = mapper.document.toString();
             evernote.updated = Date.now();
-            return userClient.updateNote(evernote).doOnNext((note:Evernote.Note) => {
+            return userClient.updateNote(evernote).flatMap<any>((note:Evernote.Note) => {
               updatesByNoteId[noteId].forEach(update => {
                 update.scheduledIdentifier.noteVersion = note.updateSequenceNum;
                 res.completed.push(update.scheduledIdentifier);
-              })
+              });
+
+              return this.schedulerStorage.recordNoteContents(
+                noteId, note.updateSequenceNum, note.content);
             })
           }).catch((e) => {
             console.error(e);

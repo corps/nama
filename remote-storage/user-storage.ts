@@ -88,7 +88,8 @@ export class UserStorage {
 
   updateStudyBook(studyBookId:number, version:number):Rx.Observable<void> {
     return this.db.run(
-      "UPDATE studyBooks SET syncVersion = ? WHERE id = ?", [version, studyBookId]
+      "UPDATE studyBooks SET syncVersion = ? WHERE id = ? AND syncVersion < ?",
+      [version, studyBookId, version]
     ).map(() => null);
   }
 

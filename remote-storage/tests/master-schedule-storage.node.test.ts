@@ -10,6 +10,50 @@ import {UserStorage} from "../user-storage";
 
 integrationModule(__filename);
 
+QUnit.test("recordNoteContents & getNoteContents", (assert) => {
+  var storage = new MasterScheduleStorage(testObjects.db);
+
+  storage.getNoteContents("doesnotexistyet").flatMap((v) => {
+    assert.equal(v, null);
+
+    return storage.recordNoteContents("noteId", 4, "Some contents");
+  }).flatMap(() => {
+    return storage.getNoteContents("noteId").doOnNext((v) => {
+      assert.deepEqual(v, {
+        id: 1,
+        noteId: "noteId",
+        noteVersion: 4,
+        contents: "Some contents"
+      });
+    })
+  }).flatMap(() => {
+    return storage.recordNoteContents("noteId", 6, "More contents");
+  }).flatMap(() => {
+    return storage.getNoteContents("noteId").doOnNext((v) => {
+      assert.deepEqual(v, {
+        id: 1,
+        noteId: "noteId",
+        noteVersion: 6,
+        contents: "More contents"
+      });
+    })
+  }).flatMap(() => {
+    return storage.recordNoteContents("noteId", 6, "Will not become this");
+  }).flatMap(() => {
+    return storage.getNoteContents("noteId").doOnNext((v) => {
+      assert.deepEqual(v, {
+        id: 1,
+        noteId: "noteId",
+        noteVersion: 6,
+        contents: "More contents"
+      });
+    })
+  }).doOnError((e) => {
+    assert.ok(false, e + "");
+  }).finally(assert.async())
+    .subscribe();
+});
+
 QUnit.test("recordSchedule first writes, then updates existing values", (assert) => {
   var storage = new MasterScheduleStorage(testObjects.db);
   var userStorage = new UserStorage(testObjects.db);

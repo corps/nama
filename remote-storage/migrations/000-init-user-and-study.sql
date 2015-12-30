@@ -40,3 +40,12 @@ CREATE TABLE schedule (
 CREATE UNIQUE INDEX idxScheduleIdentifier ON schedule ( clozeIdentifier );
 CREATE INDEX idxScheduleByNoteId ON schedule ( noteId );
 CREATE INDEX idxScheduleByDue ON schedule ( studyBookId, dueAtMinutes );
+
+CREATE TABLE noteContents (
+  id INTEGER NOT NULL PRIMARY KEY,
+  noteId VARCHAR NOT NULL,
+  noteVersion INTEGER NOT NULL,
+  contents VARCHAR NOT NULL
+);
+
+CREATE UNIQUE INDEX idxNoteContentsId ON noteContents ( noteId );

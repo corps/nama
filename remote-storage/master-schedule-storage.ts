@@ -9,6 +9,26 @@ export class MasterScheduleStorage {
   constructor(private db:DatabaseRx) {
   }
 
+  recordNoteContents(noteId:string, noteVersion:number, contents:string):Rx.Observable<void> {
+    return this.db.run("INSERT INTO noteContents (noteId, noteVersion, contents) " +
+      "VALUES (?, ?, ?);", [
+      noteId, noteVersion, contents
+    ]).catch((e) => {
+      if (e.toString().indexOf("UNIQUE constraint failed") != -1) {
+        return this.db.run(
+          "UPDATE noteContents SET noteVersion = ?, contents = ? " +
+          "WHERE noteVersion < ? AND noteId = ?", [
+            noteVersion, contents, noteVersion, noteId
+          ]);
+      }
+      throw e;
+    }).map(() => null);
+  }
+
+  getNoteContents(noteId:string):Rx.Observable<NoteContentsRow> {
+    return this.db.get("SELECT * FROM noteContents WHERE noteId = ?", [noteId]);
+  }
+
   recordSchedule(user:User,
                  noteVersion:number,
                  clozeIdentifier:ClozeIdentifier,
@@ -30,7 +50,7 @@ export class MasterScheduleStorage {
       normalizedTags
     ]).catch((e) => {
       if (e.toString().indexOf("UNIQUE constraint failed") != -1) {
-        var clearLeaseSql =  clearLease ? ", leaseExpiresAtUnix = -1" : "";
+        var clearLeaseSql = clearLease ? ", leaseExpiresAtUnix = -1" : "";
         return this.db.run("UPDATE schedule SET " +
           "dueAtMinutes = ?, noteVersion = ?, tags = ?, studyBookId = ?" + clearLeaseSql +
           " WHERE clozeIdentifier = ? AND noteVersion < ?", [
@@ -128,4 +148,11 @@ export interface ScheduleRow {
   dueAtMinutes: number
   noteVersion: number
   tags: string
+}
+
+export interface NoteContentsRow {
+  id: number
+  noteId: string
+  noteVersion: number
+  contents: string
 }

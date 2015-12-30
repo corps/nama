@@ -80,10 +80,18 @@ class ConcurrencyLimiter implements Rx.IDisposable {
 
   start<R>(observable:Rx.Observable<R>) {
     var delayedObservable:Rx.Observable<R> = Rx.Observable.create<R>(observer => {
+      var pair = [observer, observable] as [Rx.Observer<any>, Rx.Observable<any>];
       if (this.numRunning < this.maxConcurrency) {
-        this.startRunning([[observer, observable]]);
+        this.startRunning([pair]);
       } else {
-        this.queue.push([observer, observable])
+        this.queue.push(pair)
+      }
+
+      return () => {
+        var idx = this.queue.indexOf(pair);
+        if (idx !== -1) {
+          this.queue.splice(idx, 1);
+        }
       }
     });
 

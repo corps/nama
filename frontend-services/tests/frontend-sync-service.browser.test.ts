@@ -125,7 +125,7 @@ QUnit.test(`
       requestSync.onNext(null);
     }),
     updateSchedule.requestSubject.doOnNext(([req, resSubject]) => {
-      assert.equal(req.schedules, scheduleUpdates);
+      assert.deepEqual(req.schedules, scheduleUpdates.slice(0, 10));
       resSubject.onNext(updateResponse);
       resSubject.onCompleted();
     }),
