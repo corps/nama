@@ -114,6 +114,7 @@ if (require.main === module) {
         var processes = nextBatch.map(material => {
           return exportToEvernote(material, evernoteClient, user)
             .flatMap((evernote) => {
+              evernote.content = asNote(material).content;
               return scheduleStorage.recordNoteContents(
                 evernote.guid, evernote.updateSequenceNum, evernote.content).flatMap(() => {
                 var note = mapEvernoteToNote(evernote);
