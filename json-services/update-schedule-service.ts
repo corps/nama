@@ -38,6 +38,7 @@ export class UpdateScheduleService implements ServiceHandler<UpdateScheduleReque
             evernote.updateSequenceNum = noteContentsRow.noteVersion;
             evernote.content = mapper.document.toString();
             evernote.updated = Date.now();
+            evernote.guid = noteId;
             return userClient.updateNote(evernote).flatMap<any>((note:Evernote.Note) => {
               updatesByNoteId[noteId].forEach(update => {
                 update.scheduledIdentifier.noteVersion = note.updateSequenceNum;
