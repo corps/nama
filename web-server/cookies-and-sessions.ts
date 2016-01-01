@@ -16,7 +16,7 @@ export class CookiesAndSessions {
     path: '/',
   };
 
-  sessionStore = this.config.isProduction
+  sessionStore = this.config.storeSessions
     ? new FileStore({ttl: this.config.sessionTtlSecs + 100, reapInterval: -1}) as session.Store
     : new session.MemoryStore();
 

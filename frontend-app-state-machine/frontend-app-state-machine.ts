@@ -78,7 +78,6 @@ export class FrontendAppStateMachine {
   visitSummary = tap(this.interactions.interaction<void>())(interaction => {
     this.accumulator<any>(interaction.subject, (_, last) => {
       if (last.clientSession.isLoggedIn()) {
-        debugger
         this.requestSync.subject.onNext(null);
 
         if (last.currentPage !== CurrentPage.SUMMARY) {

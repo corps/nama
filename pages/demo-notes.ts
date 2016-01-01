@@ -44,6 +44,28 @@ export function buildLongNote() {
   return note;
 }
 
+export function buildShortNote() {
+  var note = new Note();
+  var term1 = new Term();
+  var cloze1 = new Cloze();
+
+  term1.details = shortDetails;
+  term1.marker = "1";
+  term1.original = "This";
+  term1.clozes.push(cloze1);
+
+  cloze1.segment = "Th";
+  note.terms.push(term1);
+
+  note.id = "note1";
+  note.text = shortNoteText;
+  return note;
+}
+
+const shortDetails = "Blah blah";
+
+const shortNoteText = "Hello\nThis[1] would be a much shorter note contents. Overall it would fit in a single screen I think";
+
 const longDetails = `
 1	酸素と抗酸化物質
 2	抗酸化物質と生活

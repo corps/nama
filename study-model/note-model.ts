@@ -9,10 +9,12 @@ const fullStops = [
   "᥅", "⁇", "⁈", "⁉", "⳺", "⳻", "⸮", "꘏", "꛷", "︖", "﹖", "？", "𑅃", "¡", "՜", "߹", "᥄",
   "‼", "︕", "﹗", "！", "、"
 ];
-
 const fullStopRegex = new RegExp(fullStops.map(escapeRegex).join("|") + "|\s\s\s+");
+const allNotFullStopRegex = new RegExp("[^" + fullStopRegex.source + "]*");
+const allNotFullStopTailRegex = new RegExp(allNotFullStopRegex.source + "$");
+const allNotFullStopHeadRegex = new RegExp("^" + allNotFullStopRegex.source);
 function atleastXUntilSentenceRegexTail(n:number) {
-  return new RegExp("[^" + fullStopRegex.source + "]*.{0," + n + "}$");
+  return new RegExp("[^" + fullStopRegex.source + "]*.{0," + n + "}$", "g");
 }
 
 function atleastXUntilSentenceRegexHead(n:number) {
@@ -40,10 +42,15 @@ export class Note {
   termContext(term:Term, grabCharsMax = 60):[string, string, string] {
     var [termStart, termEnd] = this.findTermRegion(term);
     var leftSide = this.text.slice(0, termStart);
-    leftSide = leftSide.match(atleastXUntilSentenceRegexTail(grabCharsMax))[0];
-    var rightSide = this.text.slice(termEnd, this.text.length);
-    rightSide = rightSide.match(atleastXUntilSentenceRegexHead(grabCharsMax))[0];
+    var partialLeftSide = leftSide.slice(-grabCharsMax);
+    var unusedLeft = leftSide.slice(0, leftSide.length - partialLeftSide.length);
+    leftSide = unusedLeft.match(allNotFullStopTailRegex)[0] + partialLeftSide;
 
+    var rightSide = this.text.slice(termEnd, this.text.length);
+    var unusedRight = rightSide.slice(grabCharsMax);
+    rightSide = rightSide.slice(0, grabCharsMax) + unusedRight.match(allNotFullStopHeadRegex)[0];
+
+    console.log("leftside", leftSide, leftSide.replace(/^\s*/, ""));
     return [leftSide.replace(/^\s*/, ""), this.text.slice(termStart, termEnd),
       rightSide.replace(/\s*$/, "")];
   }

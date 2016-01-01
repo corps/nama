@@ -28,7 +28,7 @@ var topContainerStyles = tap({} as CSSProperties)((s:CSSProperties) => {
 
 var desktopCardContainer = tap({} as CSSProperties)((s:CSSProperties) => {
   s.width = css.Pixels.of(650);
-  s.maxWidth = css.Pixels.of(500);
+  s.height = css.Pixels.of(500);
   s.marginLeft = css.AUTO;
   s.marginRight = css.AUTO;
   s.marginTop = css.Pixels.of(20);
@@ -134,7 +134,7 @@ export var StudyPage = component<StudyPageProps>("Study", (interactions, prop$) 
           {source}
           {images}
         </div>
-        <div className="only-mobile">
+        <div className="only-mobile" style={mobileCardContainer}>
           {card}
         </div>
         <div className="only-mobile">

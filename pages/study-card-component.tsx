@@ -91,8 +91,11 @@ var answerClozeStyles = tap({} as CSSProperties)((s:CSSProperties) => {
 });
 
 var topContainerStyles = tap({} as CSSProperties)((s:CSSProperties) => {
+  s.height = css.Percentage.of(100);
+  s.width = css.Percentage.of(100);
   s.textAlign = css.TextAlign.CENTER;
   s.overflowX = "hidden";
+  s.overflowY = "hidden";
 });
 
 var termStyles = tap({} as CSSProperties)((s:CSSProperties) => {
@@ -309,14 +312,8 @@ export var StudyCard = component<StudyCardProps>("StudyCard",
         var questionOffsetSpan = tap({} as CSSProperties)(s => {
           var adjustment = state.paragraphAdjustment;
 
-          // Ewwwwww
-          if (isIOS()) {
-            s.width = css.Pixels.of(adjustment);
-            s.height = css.Pixels.of(1);
-          } else {
-            s.height = css.Pixels.of(adjustment);
-            s.width = css.Pixels.of(1);
-          }
+          s.height = css.Pixels.of(adjustment);
+          s.width = css.Pixels.of(1);
           s.display = css.Display.INLINE_BLOCK;
         });
 

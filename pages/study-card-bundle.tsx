@@ -7,13 +7,14 @@ import {backgroundLayer} from "../common-styles/layouts";
 import {buildLongNote} from "./demo-notes";
 import {ClozeIdentifier} from "../study-model/note-model";
 import {buildImageResource} from "./demo-notes";
+import {buildShortNote} from "./demo-notes";
 
 var background = backgroundLayer();
 
 export var StudyCardTest = component<{}>("StudyCardtest", (interactions, prop$) => {
   var openInteraction = interactions.interaction<boolean>();
-  //var answering$ = answeringInteraction.subject.scan<boolean>(isAnswering => !isAnswering, false).startWith(false);
   var note = buildLongNote();
+  //var note = buildShortNote();
 
   return openInteraction.subject.startWith(false).map((isOpen) => {
     var clozeIdentifier = ClozeIdentifier.of(note, note.terms[0], note.terms[0].clozes[0]);
