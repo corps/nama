@@ -18,6 +18,7 @@ import {MasterScheduleStorage} from "../remote-storage/master-schedule-storage";
 import {XmlEntities} from "html-entities";
 import {mapEvernoteToNote} from "../evernote-mediators/map-evernote-to-note";
 import {ClozeIdentifier} from "../study-model/note-model";
+import {serializeEvernoteThrift} from "../thrift-tools/thrift-tools";
 
 function encloseInEnml(body:string) {
   return `<?xml version='1.0' encoding='utf-8'?>
@@ -116,22 +117,23 @@ if (require.main === module) {
             .flatMap((evernote) => {
               evernote.content = asNote(material).content;
               return scheduleStorage.recordNoteContents(
-                evernote.guid, evernote.updateSequenceNum, evernote.content).flatMap(() => {
-                var note = mapEvernoteToNote(evernote);
-                var processes = [] as Rx.Observable<any>[];
-                for (var term of note.terms) {
-                  for (var cloze of term.clozes) {
-                    var identifier = ClozeIdentifier.of(note, term, cloze);
-                    processes.push(
-                      scheduleStorage.recordSchedule(user, evernote.updateSequenceNum, identifier,
-                        evernote.tagGuids || [], cloze.schedule));
+                evernote.guid, evernote.updateSequenceNum, serializeEvernoteThrift(evernote))
+                .flatMap(() => {
+                  var note = mapEvernoteToNote(evernote);
+                  var processes = [] as Rx.Observable<any>[];
+                  for (var term of note.terms) {
+                    for (var cloze of term.clozes) {
+                      var identifier = ClozeIdentifier.of(note, term, cloze);
+                      processes.push(
+                        scheduleStorage.recordSchedule(user, evernote.updateSequenceNum, identifier,
+                          evernote.tagGuids || [], cloze.schedule));
+                    }
                   }
-                }
 
-                processes.push(
-                  userStorage.updateStudyBook(user.studyBook.id, evernote.updateSequenceNum));
-                return Rx.Observable.merge(processes);
-              })
+                  processes.push(
+                    userStorage.updateStudyBook(user.studyBook.id, evernote.updateSequenceNum));
+                  return Rx.Observable.merge(processes);
+                })
             }).ignoreElements().toArray()
             .doOnCompleted(() => {
               process.stdout.write(".");

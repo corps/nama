@@ -7,6 +7,7 @@ import { Evernote } from "evernote";
 import { tap, transform } from "../utils/obj";
 import {ClozeIdentifier} from "../study-model/note-model";
 import {mapEvernoteToNote} from "./map-evernote-to-note";
+import {serializeEvernoteThrift} from "../thrift-tools/thrift-tools";
 
 interface SyncBatch {
   studyBookId: number
@@ -164,7 +165,7 @@ export class EvernoteSyncService {
 
       processes.push(
         this.scheduleStorage.recordNoteContents(evernote.guid, evernote.updateSequenceNum,
-          evernote.content));
+          serializeEvernoteThrift(evernote)));
 
       processes.push(this.scheduleStorage.deleteAllOtherTerms(note.id, markers, version));
 

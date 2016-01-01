@@ -18,7 +18,7 @@ import {mapEvernoteToNote} from "../../evernote-mediators/map-evernote-to-note";
 
 integrationModule("update-schedule-service");
 
-QUnit.test("", (assert) => {
+QUnit.test("it works", (assert) => {
   var term = {} as ImportTerm;
   var cloze = {} as ImportCloze;
 
