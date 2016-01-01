@@ -42,7 +42,7 @@ QUnit.test("it works", (assert) => {
   var userStorage = new UserStorage(testObjects.db);
   var scheduleStorage = new MasterScheduleStorage(testObjects.db);
   var syncService = new EvernoteSyncService(userStorage, evernoteClient, scheduleStorage);
-  var updateService = new UpdateScheduleService(evernoteClient, scheduleStorage);
+  var updateService = new UpdateScheduleService(evernoteClient, scheduleStorage, syncService);
 
   var req = new UpdateScheduleRequest();
   var res = new UpdateScheduleResponse();
@@ -50,8 +50,9 @@ QUnit.test("it works", (assert) => {
   var noteIds = [] as string[];
   var versions = [] as number[];
   syncService.findOrCreateStudyBook(testObjects.user)
-    .flatMap(([studyBookGuid, _]:[string, number]) => {
+    .flatMap(([studyBookGuid, usn]:[string, number]) => {
       testObjects.user.studyBook.guid = studyBookGuid;
+      testObjects.user.studyBook.syncVersion = usn;
       return exportToEvernote(importMaterial, evernoteClient, testObjects.user)
     }).flatMap((evernote) => {
       noteIds.push(evernote.guid);

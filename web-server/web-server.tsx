@@ -63,13 +63,13 @@ export class WebServer {
   protected syncService = cached(
     () => new EvernoteSyncService(this.userStorage(), this.evernoteClient(), this.scheduleStorage()));
   protected updateScheduleService = cached(
-    () => new UpdateScheduleService(this.evernoteClient(), this.scheduleStorage()));
+    () => new UpdateScheduleService(this.evernoteClient(), this.scheduleStorage(), this.syncService()));
   protected summaryStatsService = cached(
     () => new SummaryStatsService(this.scheduleStorage(), this.evernoteClient(), this.syncService()));
   protected getResourceService = cached(() => new GetResourceService(this.evernoteClient()));
   protected getLatestNoteService = cached(() => new GetLatestNoteService(this.evernoteClient()));
   protected fetchScheduleService = cached(
-    () => new FetchScheduleService(this.scheduleStorage(), this.evernoteClient(), this.syncService(), this.timeProvider()))
+    () => new FetchScheduleService(this.scheduleStorage(), this.evernoteClient(), this.syncService(), this.timeProvider()));
   protected jsonServiceHandlers = cached<ServiceHandler<any, any, User>[]>(() =>
     [
       this.fetchScheduleService(), this.getLatestNoteService(), this.getResourceService(),

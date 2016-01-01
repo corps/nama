@@ -7,7 +7,7 @@ import {ScheduleUpdate} from "../api/api-models";
 
 const TERM_HEADER = /^\s*\[(.+)\]\s+(.+)/;
 const HINT_LINE = /^\?\s+(.+)/;
-const CLOZE_SCHEDULE_LINE = /^\s*--\s+(\S+)(\s+new\s+(.+)\s+due\s+(.+)\s+interval\s+(.+)\s+last\s+(.+))?/;
+const CLOZE_SCHEDULE_LINE = /^\s*(--|—)\s+(\S+)(\s+new\s+(.+)\s+due\s+(.+)\s+interval\s+(.+)\s+last\s+(.+))?/;
 
 export const SUPPORTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif"];
 
@@ -63,16 +63,16 @@ export class NoteContentsMapper extends XHTMLLineParser {
       var cloze = new Cloze();
       this.currentTerm.clozes.push(cloze);
 
-      cloze.segment = clozeLineMatch[1];
+      cloze.segment = clozeLineMatch[2];
 
       if (clozeLineMatch[4]) {
-        cloze.schedule.isNew = clozeLineMatch[3] === 'true';
+        cloze.schedule.isNew = clozeLineMatch[4] === 'true';
         cloze.schedule.dueAtMinutes =
-          Math.floor(moment.utc(clozeLineMatch[4], TIME_FORMAT).unix() / 60);
+          Math.floor(moment.utc(clozeLineMatch[5], TIME_FORMAT).unix() / 60);
         cloze.schedule.intervalMinutes =
-          Math.floor(moment.duration(clozeLineMatch[5]).asMinutes());
+          Math.floor(moment.duration(clozeLineMatch[6]).asMinutes());
         cloze.schedule.lastAnsweredMinutes =
-          Math.floor(moment.utc(clozeLineMatch[6], TIME_FORMAT).unix() / 60);
+          Math.floor(moment.utc(clozeLineMatch[7], TIME_FORMAT).unix() / 60);
       }
 
       var scheduleUpdateMatch = this.scheduleUpdateMatch();

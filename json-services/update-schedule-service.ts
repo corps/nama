@@ -12,10 +12,12 @@ import {MasterScheduleStorage} from "../remote-storage/master-schedule-storage";
 import {NoteContentsRow} from "../remote-storage/master-schedule-storage";
 import {serializeEvernoteThrift} from "../thrift-tools/thrift-tools";
 import {deserializeEvernoteThrift} from "../thrift-tools/thrift-tools";
+import {EvernoteSyncService} from "../evernote-mediators/evernote-sync-service";
 
 export class UpdateScheduleService implements ServiceHandler<UpdateScheduleRequest, UpdateScheduleResponse, User> {
   constructor(private evernoteClient:EvernoteClientRx,
-              private schedulerStorage:MasterScheduleStorage) {
+              private schedulerStorage:MasterScheduleStorage,
+              private syncService:EvernoteSyncService) {
   }
 
   endpoint = UpdateSchedule;
@@ -36,6 +38,8 @@ export class UpdateScheduleService implements ServiceHandler<UpdateScheduleReque
   handle(req:UpdateScheduleRequest, res:UpdateScheduleResponse, user$:Rx.Observable<User>) {
     var userClient:EvernoteClientRx;
     return user$.flatMap((user) => {
+      return this.syncService.sync(user).ignoreElements().toArray().map(() => user);
+    }).flatMap((user) => {
       userClient = this.evernoteClient.forUser(user);
       var updatesByNoteId = {} as {[k:string]:ScheduleUpdate[]};
       for (var scheduleUpdate of req.schedules) {
@@ -55,9 +59,6 @@ export class UpdateScheduleService implements ServiceHandler<UpdateScheduleReque
               update.scheduledIdentifier.noteVersion = note.updateSequenceNum;
               res.completed.push(update.scheduledIdentifier);
             });
-            //
-            //return this.schedulerStorage.recordNoteContents(
-            //  noteId, note.updateSequenceNum, serializeEvernoteThrift(note));
           })
         }).catch((e) => {
           console.error(e);

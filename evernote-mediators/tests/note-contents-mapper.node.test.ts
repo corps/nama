@@ -57,6 +57,31 @@ QUnit.test("note contents are trimmed of trailing and extraneous inner newlines"
   assert.equal(mapper.note.text, "Hello\n\nWorld");
 });
 
+QUnit.test("clozes can begin with — instead of --", (assert) => {
+  var mapper = new NoteContentsMapper(wrapInsideEnNote(`
+    <div>
+    <br/>
+    <div>[1] a term</div>
+    <div>— without</div>
+    <div>— with new true due 04-11-2011 11:25 interval PT16M00S last 03-04-2011 18:11</div>
+    </div>
+  `));
+
+  mapper.map();
+
+  assert.equal(mapper.note.terms.length, 1);
+  assert.equal(mapper.note.terms[0].clozes.length, 2);
+  assert.equal(mapper.note.terms[0].clozes[0].segment, "without");
+  assert.equal(mapper.note.terms[0].clozes[0].schedule.dueAtMinutes, 0);
+  assert.equal(mapper.note.terms[0].clozes[0].schedule.intervalMinutes, 0);
+  assert.equal(mapper.note.terms[0].clozes[0].schedule.lastAnsweredMinutes, 0);
+  assert.equal(mapper.note.terms[0].clozes[1].segment, "with");
+  assert.equal(mapper.note.terms[0].clozes[1].schedule.isNew, true);
+  assert.equal(mapper.note.terms[0].clozes[1].schedule.dueAtMinutes, 21708685);
+  assert.equal(mapper.note.terms[0].clozes[1].schedule.intervalMinutes, 16);
+  assert.equal(mapper.note.terms[0].clozes[1].schedule.lastAnsweredMinutes, 21654371);
+});
+
 QUnit.test("clozes can be parsed with or without schedules", (assert) => {
   var mapper = new NoteContentsMapper(wrapInsideEnNote(`
     <div>
