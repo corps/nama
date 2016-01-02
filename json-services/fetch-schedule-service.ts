@@ -11,6 +11,7 @@ import {tap} from "../utils/obj";
 import {mapEvernoteToNote} from "../evernote-mediators/map-evernote-to-note";
 import {Note} from "../study-model/note-model";
 import {Evernote} from "evernote";
+import {deserializeEvernoteThrift} from "../thrift-tools/thrift-tools";
 
 export class FetchScheduleService implements ServiceHandler<FetchScheduleRequest, FetchScheduleResponse, User> {
   constructor(private scheduleStorage:MasterScheduleStorage,
@@ -20,6 +21,19 @@ export class FetchScheduleService implements ServiceHandler<FetchScheduleRequest
   }
 
   endpoint = FetchSchedule;
+
+  getNote(userClient:EvernoteClientRx, noteId:string):Rx.Observable<Evernote.Note> {
+    return this.scheduleStorage.getNoteContents(noteId).flatMap(noteCache => {
+      if (noteCache == null) {
+        return userClient.getNote(noteId);
+      }
+
+      var note = new Evernote.Note();
+      deserializeEvernoteThrift(noteCache.contents, note);
+
+      return Rx.Observable.just(note);
+    })
+  }
 
   handle(req:FetchScheduleRequest, res:FetchScheduleResponse, user$:Rx.Observable<User>) {
     var now = moment(this.timeProvider());
@@ -53,7 +67,7 @@ export class FetchScheduleService implements ServiceHandler<FetchScheduleRequest
     }).flatMap((scheduleRows) => {
       return Rx.Observable.from(scheduleRows.map(s => s.noteId).sort())
         .distinctUntilChanged()
-        .concatMap<Evernote.Note>(noteId => userClient.getNote(noteId, true))
+        .concatMap<Evernote.Note>(noteId => this.getNote(userClient, noteId))
         .map(evernote => mapEvernoteToNote(evernote))
     }).doOnNext((note:Note) => {
       res.notes.push(note);

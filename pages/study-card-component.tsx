@@ -216,9 +216,7 @@ export var StudyCard = component<StudyCardProps>("StudyCard",
             if (questionContainerSize.width === 0) return;
             var questionAdjustment = component.refs['question-adjustment'] as any as HTMLElement;
             var questionAdjustmentSize = questionAdjustment.getBoundingClientRect();
-            var paragraphAdjustment = isIOS()
-              ? questionAdjustmentSize.width
-              : questionAdjustmentSize.height;
+            var paragraphAdjustment = questionAdjustmentSize.height;
 
             questionContainerSizeInteraction.listener(questionContainerSize);
             var questionHeight = questionContainerSize.height;

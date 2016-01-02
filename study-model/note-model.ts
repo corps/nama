@@ -50,7 +50,6 @@ export class Note {
     var unusedRight = rightSide.slice(grabCharsMax);
     rightSide = rightSide.slice(0, grabCharsMax) + unusedRight.match(allNotFullStopHeadRegex)[0];
 
-    console.log("leftside", leftSide, leftSide.replace(/^\s*/, ""));
     return [leftSide.replace(/^\s*/, ""), this.text.slice(termStart, termEnd),
       rightSide.replace(/\s*$/, "")];
   }

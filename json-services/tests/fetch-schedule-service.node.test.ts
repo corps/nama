@@ -153,3 +153,4 @@ QUnit.test(`
     return Rx.Observable.just(null);
   }).finally(assert.async()).subscribe();
 });
+
