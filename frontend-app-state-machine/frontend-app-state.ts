@@ -12,7 +12,6 @@ export enum CurrentPage {
 
 export class FrontendAppState {
   currentPage = CurrentPage.LOGGED_OUT;
-  numStudiedLastSession = 0;
   numStudiedCurSession = 0;
   scheduledStudy = new ScheduledStudy();
   summaryStats = new SummaryStatsResponse();
@@ -23,4 +22,3 @@ export class FrontendAppState {
   curStudyIdx = 0;
   isAnswering = false;
 }
-

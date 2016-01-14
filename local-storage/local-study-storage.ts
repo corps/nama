@@ -63,7 +63,7 @@ export class LocalStudyStorage {
 
         dueKeys.push(nextStored.reverse())
       });
-      dueKeys.sort();
+      dueKeys.sort().reverse();
 
       for (var nextDueKey of dueKeys) {
         nextDueKey.reverse(); // unreverse, which was used for sorting earlier.

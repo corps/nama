@@ -3,15 +3,15 @@ export class LocalStorage {
   }
 
   keys():string[] {
-    if (this.storage === window.localStorage) {
-      return Object.keys(window.localStorage);
+    if (this.storage instanceof MemoryStorage) {
+      var keys = [] as string[];
+      for (var i = 0; i < this.storage.length; ++i) {
+        var key = this.storage.key(i);
+        if (key) keys.push(key);
+      }
+      return keys;
     }
-    var keys = [] as string[];
-    for (var i = 0; i < this.storage.length; ++i) {
-      var key = this.storage.key(i);
-      if (key) keys.push(key);
-    }
-    return keys;
+    return Object.keys(window.localStorage);
   }
 
   get(key:string):any {
