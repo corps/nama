@@ -25,7 +25,9 @@ export class NoteContentsMapper extends XHTMLLineParser {
     return super.beginNewMap();
   }
 
-  constructor(xml:string, private scheduleUpdates?:ScheduleUpdate[]) {
+  constructor(xml:string,
+              private scheduleUpdates?:ScheduleUpdate[],
+              private now = Date.now()) {
     super(xml);
   }
 
@@ -73,6 +75,9 @@ export class NoteContentsMapper extends XHTMLLineParser {
           Math.floor(moment.duration(clozeLineMatch[6]).asMinutes());
         cloze.schedule.lastAnsweredMinutes =
           Math.floor(moment.utc(clozeLineMatch[7], TIME_FORMAT).unix() / 60);
+      } else {
+        // default to 2 hours after the fact.
+        cloze.schedule.dueAtMinutes = this.now + 120;
       }
 
       var scheduleUpdateMatch = this.scheduleUpdateMatch();

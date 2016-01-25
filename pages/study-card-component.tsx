@@ -306,7 +306,6 @@ export var StudyCard = component<StudyCardProps>("StudyCard",
     return {
       dispose: disposable,
       view: localStateAndProp$.map(([localProps, state]:[LocalProps, LocalState]) => {
-
         var questionOffsetSpan = tap({} as CSSProperties)(s => {
           var adjustment = state.paragraphAdjustment;
 

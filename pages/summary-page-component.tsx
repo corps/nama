@@ -22,6 +22,7 @@ var containerStyles = tap({} as CSSProperties)((s) => {
   s.textAlign = css.TextAlign.CENTER;
   s.paddingLeft = css.Pixels.of(16);
   s.paddingRight = css.Pixels.of(16);
+  s.paddingBottom = css.Pixels.of(30);
 });
 
 var headingStyles = tap({} as CSSProperties)((s) => {
