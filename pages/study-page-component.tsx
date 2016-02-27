@@ -107,7 +107,7 @@ export var StudyPage = component<StudyPageProps>("Study", (interactions, prop$) 
       </div>;
 
       return <div style={topContainerStyles}>
-        <div className={onlyDesktopStyleName}>
+        <div className="only-desktop">
           <div style={desktopCardContainer}>
             {card}
           </div>

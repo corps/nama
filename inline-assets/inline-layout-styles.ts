@@ -25,9 +25,11 @@ insertCss(`
 `);
 
 if (typeof document !== "undefined") {
-  if (isIOS()) {
-    document.body.className += " " + isMobileStyleName;
-  } else {
-    document.body.className += " " + isDesktopStyleName;
-  }
+  document.addEventListener("DOMContentLoaded", () => {
+    if (isIOS()) {
+      document.body.className += " " + isMobileStyleName;
+    } else {
+      document.body.className += " " + isDesktopStyleName;
+    }
+  }, false);
 }
