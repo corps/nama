@@ -148,7 +148,7 @@ interface LocalState {
 interface StudyCardProps {
   note: Note
   clozeIdentifier: ClozeIdentifier
-  onRequestOpen?: (e:any)=>void
+  onRequestOpen?: (e:boolean)=>void
   isOpen?: boolean
   onAnswer?: (f:number)=>void
 }
@@ -200,7 +200,7 @@ export class StudyCard extends React.Component<StudyCardProps, typeof initialSta
   }
 
   componentWillReceiveProps(props:StudyCardProps) {
-    if (this.state.isOpen != props.isOpen) {
+    if (props.onRequestOpen !== null) {
       var nextState = shallowCopy(this.state);
       nextState.isOpen = props.isOpen;
       this.setState(nextState);
@@ -305,10 +305,13 @@ export class StudyCard extends React.Component<StudyCardProps, typeof initialSta
   }
 
   triggerOpen = () => {
-    var nextState = shallowCopy(this.state);
-    nextState.isOpen = !nextState.isOpen;
-    this.setState(nextState);
-    this.props.onRequestOpen(undefined);
+    if (this.props.onRequestOpen) {
+      this.props.onRequestOpen(!this.state.isOpen);
+    } else {
+      var nextState = shallowCopy(this.state);
+      nextState.isOpen = !nextState.isOpen;
+      this.setState(nextState);
+    }
   };
 
   triggerAnswer = (factor:number) => {
