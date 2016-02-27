@@ -186,7 +186,7 @@ export class StudyCard extends React.Component<StudyCardProps, typeof initialSta
 
   clearSelections = () => {
     document.getSelection().removeAllRanges();
-  }
+  };
 
   componentDidMount() {
     this.resizeSubject.debounce(200).subscribe(this.handleOnResize);
@@ -200,11 +200,11 @@ export class StudyCard extends React.Component<StudyCardProps, typeof initialSta
   }
 
   componentWillReceiveProps(props:StudyCardProps) {
-    if (this.state.isOpen != props.isOpen) {
-      var nextState = shallowCopy(this.state);
-      nextState.isOpen = props.isOpen;
-      this.setState(nextState);
-    }
+    // if (this.state.isOpen != props.isOpen) {
+    //   var nextState = shallowCopy(this.state);
+    //   nextState.isOpen = props.isOpen;
+    //   this.setState(nextState);
+    // }
   }
 
   computeClozeProps() {
@@ -358,7 +358,7 @@ export class StudyCard extends React.Component<StudyCardProps, typeof initialSta
           </div>
         </div> }
       </div>
-      <div onClick={() => this.triggerOpen()}
+      <div onClick={(e) => { e.preventDefault(); this.triggerOpen(); }}
            onTouchTap={(e) => { e.preventDefault(); this.triggerOpen(); }}>
         <ScreenFitVerticalParagraph
           key={clozeIdStr}
