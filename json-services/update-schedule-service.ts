@@ -53,6 +53,7 @@ export class UpdateScheduleService implements ServiceHandler<UpdateScheduleReque
           var mapper = new NoteContentsMapper(evernote.content, updatesByNoteId[noteId]);
           mapper.map();
           evernote.content = mapper.document.toString();
+          evernote.title = mapper.note.terms.map(t => t.original).join(", ");
           evernote.updated = Date.now();
           return userClient.updateNote(evernote).doOnNext((note:Evernote.Note) => {
             updatesByNoteId[noteId].forEach(update => {

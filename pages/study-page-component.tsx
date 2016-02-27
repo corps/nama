@@ -1,7 +1,5 @@
 import * as React from "react";
-import { component } from "../cycle-rx-utils/components";
-import * as Rx from "rx-lite";
-import * as Colors from "../common-styles/colors";
+import {component} from "../cycle-rx-utils/components";
 import {CSSProperties} from "../css-properties/css-properties";
 import {tap} from "../utils/obj";
 import * as css from "../css-properties/css-properties";
@@ -10,9 +8,9 @@ import {FrontendAppState} from "../frontend-app-state-machine/frontend-app-state
 import {assign} from "../utils/obj";
 import {StudyCard} from "./study-card-component";
 import {shortcutKeyStyles} from "../common-styles/layouts";
-import {Resource} from "../study-model/note-model";
 import {MapIcon} from "../icons/map-icon";
 import {LinkIcon} from "../icons/link-icon";
+import {onlyDesktopStyleName, onlyMobileStyleName} from "../inline-assets/inline-css-bundle";
 
 var iconStyles = tap({} as CSSProperties)((s:CSSProperties) => {
   s.width = css.Pixels.of(25);
@@ -83,7 +81,7 @@ export var StudyPage = component<StudyPageProps>("Study", (interactions, prop$) 
       var location = note.location ? <div>
         <a href={mapsLocationUrl}>
           <MapIcon style={iconStyles}/>
-          &nbsp;{note.location}
+          &nbsp;Note Location
         </a>
       </div>
         : null;
@@ -98,11 +96,18 @@ export var StudyPage = component<StudyPageProps>("Study", (interactions, prop$) 
 
       var images = props.appState.images.map(image => <div>
         <img key={image.id}
-          src={`data:${image.contentType};base64,${image.b64Data}`}/>
+             src={`data:${image.contentType};base64,${image.b64Data}`}/>
       </div>);
 
+      var linkToOriginal = <div>
+        <a
+          href={`https://www.evernote.com/Home.action#n=${note.id}`}>
+          Link to Original
+        </a>
+      </div>;
+
       return <div style={topContainerStyles}>
-        <div className="only-desktop">
+        <div className={onlyDesktopStyleName}>
           <div style={desktopCardContainer}>
             {card}
           </div>
@@ -128,8 +133,13 @@ export var StudyPage = component<StudyPageProps>("Study", (interactions, prop$) 
           </div>
 
           <div>
-            This Session: {props.appState.numStudiedCurSession} / {props.appState.numStudiedCurSession + numInQueue}
+            This Session: {props.appState.numStudiedCurSession}
+            / {props.appState.numStudiedCurSession + numInQueue}
           </div>
+          <div className={onlyMobileStyleName}>
+            <a href="#" onClick={finishStudyInteraction.listener}>Return to summary</a>
+          </div>
+          {linkToOriginal}
           {location}
           {source}
           {images}
@@ -138,9 +148,10 @@ export var StudyPage = component<StudyPageProps>("Study", (interactions, prop$) 
           {card}
         </div>
         <div className="only-mobile">
-          <div>
+          <div className={onlyMobileStyleName}>
             <a href="#" onClick={finishStudyInteraction.listener}>Return to summary</a>
           </div>
+          {linkToOriginal}
           {location}
           {source}
           {images}

@@ -4,8 +4,8 @@ import {DevelopmentConfiguration} from "./development-config";
 import express = require('express');
 import {BundlesDirectoryComponent} from "./bundles-directory-component";
 import {renderHtmlHostForBundle} from "./build-html-host";
-import { RedboxErrors } from "../rebox-errors/redbox-errors-component";
-import { WebpackErrorCatcherPlugin } from "./webpack-error-catcher-plugin";
+import {RedboxErrors} from "../rebox-errors/redbox-errors-component";
+import {WebpackErrorCatcherPlugin} from "./webpack-error-catcher-plugin";
 
 require('lie/polyfill');
 var webpackDevMiddleware = require('webpack-dev-middleware');
@@ -95,7 +95,9 @@ server.use(((err, req, res, next) => {
     props: {
       sideLoadedData: {
         errors: allErrs.map(e => {
-          stack: e.stack
+          return {
+            "stack": e.stack
+          }
         })
       },
       jsSrcPath: "/assets/redbox-errors.js"

@@ -345,7 +345,6 @@ export class EvernoteClientRx {
         return this.wrapWithRetriesAndLimiters(observable);
       }
       throw e;
-      return null;
     };
 
     var concurrencyRunner = () => {

@@ -18,6 +18,7 @@ import {mapEvernoteToNote} from "../../evernote-mediators/map-evernote-to-note";
 
 integrationModule("update-schedule-service");
 
+
 QUnit.test("it works", (assert) => {
   var term = {} as ImportTerm;
   var cloze = {} as ImportCloze;
@@ -135,6 +136,7 @@ QUnit.test("it works", (assert) => {
     return Rx.Observable.merge(
       userClient.getNote(noteIds[0]).doOnNext((evernote:Evernote.Note) => {
         var note = mapEvernoteToNote(evernote);
+        assert.equal(evernote.title, "Awesome");
         assert.deepEqual(JSON.parse(JSON.stringify(note.terms)), [{
           "original": "Awesome",
           "marker": "marker1",
@@ -162,6 +164,7 @@ QUnit.test("it works", (assert) => {
       }),
       userClient.getNote(noteIds[1]).doOnNext((evernote:Evernote.Note) => {
         var note = mapEvernoteToNote(evernote);
+        assert.equal(evernote.title, "Awesome");
         assert.deepEqual(JSON.parse(JSON.stringify(note.terms)), [{
           "original": "Awesome",
           "marker": "marker1",

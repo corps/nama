@@ -1,8 +1,8 @@
 import * as Rx from "rx";
 import * as path from "path";
 import * as fs from "fs";
-import { tap } from "../utils/obj";
-import { DatabaseRx } from "../database-rx/database-rx";
+import {tap} from "../utils/obj";
+import {DatabaseRx} from "../database-rx/database-rx";
 
 export interface Migration {
   name: string,
@@ -59,8 +59,7 @@ export class Migrator {
             .map(() => migration)
         ])
         .catch((e) => {
-          throw new Error(migration.name + " failed: " + e);
-          return null;
+          return Rx.Observable.throw(new Error(migration.name + " failed: " + e));
         }));
   }
 

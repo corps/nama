@@ -1,4 +1,4 @@
-import { WebServerConfig } from "./web-server-config";
+import {WebServerConfig} from "./web-server-config";
 import * as express from "express";
 import * as Rx from "rx";
 import onFinished = require("on-finished");
@@ -12,10 +12,6 @@ export class RequestError {
 
   format() {
     return this.error + "";
-    if (this.error.stack) {
-      return this.error.stack;
-    }
-    return this.error;
   }
 
   toString() {

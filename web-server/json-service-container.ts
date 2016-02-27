@@ -49,8 +49,7 @@ export class JsonServiceContainer {
 
         foundUser$.catch((e) => {
           this.logging.errorsSubject.onNext(new RequestError(e, req))
-          throw new AuthorizationError();
-          return null;
+          return Rx.Observable.throw(new AuthorizationError());
         }).subscribe(observer);
       });
 

@@ -10,7 +10,9 @@ export function mapEvernoteToNote(evernote:Evernote.Note) {
     note.id = evernote.guid;
     if (evernote.attributes.placeName || evernote.attributes.latitude) {
       note.location =
-        evernote.attributes.placeName || evernote.attributes.latitude + "," + evernote.attributes.longitude;
+        evernote.attributes.placeName
+        || evernote.attributes.latitude.toPrecision(10) + ","
+        + evernote.attributes.longitude.toPrecision(10);
     }
     note.sourceURL = evernote.attributes.sourceURL || "";
     note.version = evernote.updateSequenceNum;
