@@ -200,11 +200,11 @@ export class StudyCard extends React.Component<StudyCardProps, typeof initialSta
   }
 
   componentWillReceiveProps(props:StudyCardProps) {
-    // if (this.state.isOpen != props.isOpen) {
-    //   var nextState = shallowCopy(this.state);
-    //   nextState.isOpen = props.isOpen;
-    //   this.setState(nextState);
-    // }
+    if (this.state.isOpen != props.isOpen) {
+      var nextState = shallowCopy(this.state);
+      nextState.isOpen = props.isOpen;
+      this.setState(nextState);
+    }
   }
 
   computeClozeProps() {
