@@ -24,8 +24,10 @@ insertCss(`
   display: block !important;
 `);
 
-if(isIOS()) {
-  document.body.className += " " + isMobileStyleName;
-} else {
-  document.body.className += " " + isDesktopStyleName;
+if (typeof document !== "undefined") {
+  if (isIOS()) {
+    document.body.className += " " + isMobileStyleName;
+  } else {
+    document.body.className += " " + isDesktopStyleName;
+  }
 }
