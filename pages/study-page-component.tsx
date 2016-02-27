@@ -10,7 +10,7 @@ import {StudyCard} from "./study-card-component";
 import {shortcutKeyStyles} from "../common-styles/layouts";
 import {MapIcon} from "../icons/map-icon";
 import {LinkIcon} from "../icons/link-icon";
-import {onlyDesktopStyleName, onlyMobileStyleName} from "../inline-assets/inline-css-bundle";
+import {onlyDesktopStyleName, onlyMobileStyleName} from "../inline-assets/inline-layout-styles";
 
 var iconStyles = tap({} as CSSProperties)((s:CSSProperties) => {
   s.width = css.Pixels.of(25);

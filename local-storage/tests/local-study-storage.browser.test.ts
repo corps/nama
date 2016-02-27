@@ -568,7 +568,7 @@ QUnit.test(`
   ]);
 
   var schedule = studyStorage.getSchedule();
-  assert.deepEqual(Object.keys(schedule.notes), ["note2", "note1"]);
+  assert.deepEqual(Object.keys(schedule.notes).sort(), ["note1", "note2"]);
 
   assert.notEqual(schedule.notes["note1"], null);
   assert.deepEqual(schedule.notes["note1"], studyStorage.getNote("note1"));
@@ -581,17 +581,17 @@ QUnit.test(`
   assert.deepEqual(JSON.parse(JSON.stringify(schedule.scheduledClozes)), [
     {
       "clozeIdentifier": {
-        "clozeIdx": 0,
-        "noteId": "note2",
-        "termMarker": "term2"
+        "clozeIdx": 1,
+        "noteId": "note1",
+        "termMarker": "term1"
       },
       "noteVersion": 3
     },
     {
       "clozeIdentifier": {
-        "clozeIdx": 1,
-        "noteId": "note1",
-        "termMarker": "term1"
+        "clozeIdx": 0,
+        "noteId": "note2",
+        "termMarker": "term2"
       },
       "noteVersion": 3
     },
@@ -619,7 +619,7 @@ QUnit.test(`
 
   schedule = studyStorage.getSchedule();
   assert.deepEqual(schedule.scheduledClozes.map(sc => sc.clozeIdentifier.toString()),
-    ["note2;term2;0", "note1;term1;1"]);
+    ["note1;term1;1", "note2;term2;0"]);
 
   assert.deepEqual(localStorage.keys().sort(), [
     "localSettings",

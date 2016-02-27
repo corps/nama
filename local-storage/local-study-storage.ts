@@ -47,6 +47,7 @@ export class LocalStudyStorage {
 
   getSchedule():ScheduledStudy {
     var nowUnixTime = this.timeProvider().getTime() / 1000;
+    var nowMinutes = Math.floor(nowUnixTime / 60);
     return tap(new ScheduledStudy())((result:ScheduledStudy) => {
       var sortedKeys = this.localStorage.keys().sort();
       var startIdx = this.startIdx(SCHEDULED_PREFIX, sortedKeys);
@@ -61,12 +62,22 @@ export class LocalStudyStorage {
           return;
         }
 
-        dueKeys.push(nextStored.reverse())
+        dueKeys.push(nextStored)
       });
-      dueKeys.sort().reverse();
+
+      var seqOfKey = (key:string[]) => {
+        var dueAtMinutes = parseInt(key[SCHEDULED_DUE_AT], 10);
+        if (dueAtMinutes < nowMinutes) {
+          return nowMinutes - dueAtMinutes;
+        }
+        return nowMinutes;
+      };
+
+      dueKeys.sort((a, b) => {
+        return seqOfKey(a) - seqOfKey(b);
+      });
 
       for (var nextDueKey of dueKeys) {
-        nextDueKey.reverse(); // unreverse, which was used for sorting earlier.
         var nextJson = this.localStorage.get(nextDueKey.join(SEPARATOR));
 
         if (nextJson != null) {
