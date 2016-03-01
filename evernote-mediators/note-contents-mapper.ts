@@ -77,7 +77,7 @@ export class NoteContentsMapper extends XHTMLLineParser {
           Math.floor(moment.utc(clozeLineMatch[7], TIME_FORMAT).unix() / 60);
       } else {
         // default to 2 hours after the fact.
-        cloze.schedule.dueAtMinutes = this.now + 120;
+        cloze.schedule.dueAtMinutes = Math.floor(this.now / 60000) + 120;
       }
 
       var scheduleUpdateMatch = this.scheduleUpdateMatch();

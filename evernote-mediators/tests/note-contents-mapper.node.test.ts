@@ -93,7 +93,7 @@ QUnit.test("clozes can be parsed with or without schedules", (assert) => {
   assert.equal(mapper.note.terms.length, 1);
   assert.equal(mapper.note.terms[0].clozes.length, 2);
   assert.equal(mapper.note.terms[0].clozes[0].segment, "without");
-  assert.equal(mapper.note.terms[0].clozes[0].schedule.dueAtMinutes, now + 120);
+  assert.equal(mapper.note.terms[0].clozes[0].schedule.dueAtMinutes, Math.floor(now / 60000) + 120);
   assert.equal(mapper.note.terms[0].clozes[0].schedule.intervalMinutes, 0);
   assert.equal(mapper.note.terms[0].clozes[0].schedule.lastAnsweredMinutes, 0);
   assert.equal(mapper.note.terms[0].clozes[1].segment, "with");
