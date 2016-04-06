@@ -1,6 +1,6 @@
 import * as Rx from "rx-lite";
 import * as state from "./frontend-app-state";
-import { tap, transform, Transformer } from "../utils/obj";
+import {tap, transform, Transformer} from "../utils/obj";
 import {Interactions} from "../cycle-rx-utils/interactions";
 import {LocalSettings} from "../local-storage/local-settings-model";
 import {FrontendAppState, CurrentPage} from "./frontend-app-state";
@@ -92,6 +92,8 @@ export class FrontendAppStateMachine {
     this.accumulator<any>(interaction.subject, (_, last) => {
       if (last.scheduledStudy.scheduledClozes.length > 0
         && last.currentPage !== state.CurrentPage.STUDYING) {
+
+        window.scrollTo(0, 0);
         return transformState(last)(next => {
           next.currentPage = CurrentPage.STUDYING;
           next.curStudyIdx = 0;

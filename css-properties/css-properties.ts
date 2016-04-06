@@ -142,6 +142,12 @@ export class Percentage extends Unit {
   static of = ofGenerator<Percentage>(Percentage);
 }
 
+export class ViewportHeight extends Unit {
+  viewportHeight = true;
+  static unit = "vh";
+  static of = ofGenerator<ViewportHeight>(ViewportHeight);
+}
+
 export class Pixels extends Unit {
   pixels = true;
   static unit = "px";
@@ -203,7 +209,7 @@ export class BoxShadow {
   }
 }
 
-export type Metric = Pixels | Percentage | Calc;
+export type Metric = Pixels | Percentage | Calc | ViewportHeight;
 export type Margin = Metric | typeof AUTO | typeof INHERIT;
 
 export interface CSSProperties extends ReactCSSProperties {

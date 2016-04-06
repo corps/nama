@@ -8,16 +8,7 @@ import {FrontendAppState} from "../frontend-app-state-machine/frontend-app-state
 import {assign} from "../utils/obj";
 import {StudyCard} from "./study-card-component";
 import {shortcutKeyStyles} from "../common-styles/layouts";
-import {MapIcon} from "../icons/map-icon";
-import {LinkIcon} from "../icons/link-icon";
-import {onlyDesktopStyleName, onlyMobileStyleName} from "../inline-assets/inline-layout-styles";
-
-var iconStyles = tap({} as CSSProperties)((s:CSSProperties) => {
-  s.width = css.Pixels.of(25);
-  s.display = css.Display.INLINE_BLOCK;
-  s.position = css.Position.RELATIVE;
-  s.top = css.Pixels.of(2);
-});
+import {onlyMobileStyleName} from "../inline-assets/inline-layout-styles";
 
 var topContainerStyles = tap({} as CSSProperties)((s:CSSProperties) => {
   s.textAlign = css.TextAlign.CENTER;
@@ -44,11 +35,11 @@ var shortcutHintBlockStyles = tap({} as CSSProperties)((s:CSSProperties) => {
 });
 
 export interface StudyPageProps {
-  appState: FrontendAppState
-  onShowHide: (e:boolean) => void
-  onAnswer: (e:number) => void
-  onRequestImageIds: (ids:string[]) => void
-  onFinishStudy: (e:any) => void
+  appState:FrontendAppState
+  onShowHide:(e:boolean) => void
+  onAnswer:(e:number) => void
+  onRequestImageIds:(ids:string[]) => void
+  onFinishStudy:(e:any) => void
 }
 
 export var StudyPage = component<StudyPageProps>("Study", (interactions, prop$) => {
@@ -67,44 +58,16 @@ export var StudyPage = component<StudyPageProps>("Study", (interactions, prop$) 
       var clozeId = study.scheduledClozes[props.appState.curStudyIdx].clozeIdentifier;
       var note = study.notes[clozeId.noteId];
 
-      var mapsLocationUrl = `https://www.google.com/maps/place/` + note.location;
-      if (note.location.match(/^\d+\.?\d*\,\d+\.?\d*$/)) {
-        mapsLocationUrl = `https://www.google.com/maps/@` + note.location;
-      }
-
       var card = <StudyCard onAnswer={answerInteraction.listener}
                             onRequestOpen={showHideInteraction.listener}
                             isOpen={props.appState.isAnswering}
                             note={note}
                             clozeIdentifier={clozeId}/>;
 
-      var location = note.location ? <div>
-        <a href={mapsLocationUrl}>
-          <MapIcon style={iconStyles}/>
-          &nbsp;Note Location
-        </a>
-      </div>
-        : null;
-
-      var source = note.sourceURL ? <div>
-        <a href={note.sourceURL}>
-          <LinkIcon style={iconStyles}/>
-          &nbsp;Source Website
-        </a>
-      </div>
-        : null;
-
       var images = props.appState.images.map(image => <div>
         <img key={image.id}
              src={`data:${image.contentType};base64,${image.b64Data}`}/>
       </div>);
-
-      var linkToOriginal = <div>
-        <a
-          href={`https://www.evernote.com/Home.action#n=${note.id}`}>
-          Link to Original
-        </a>
-      </div>;
 
       return <div style={topContainerStyles}>
         <div className="only-desktop">
@@ -139,9 +102,6 @@ export var StudyPage = component<StudyPageProps>("Study", (interactions, prop$) 
           <div className={onlyMobileStyleName}>
             <a href="#" onClick={finishStudyInteraction.listener}>Return to summary</a>
           </div>
-          {linkToOriginal}
-          {location}
-          {source}
           {images}
         </div>
         <div className="only-mobile" style={mobileCardContainer}>
@@ -151,9 +111,6 @@ export var StudyPage = component<StudyPageProps>("Study", (interactions, prop$) 
           <div className={onlyMobileStyleName}>
             <a href="#" onClick={finishStudyInteraction.listener}>Return to summary</a>
           </div>
-          {linkToOriginal}
-          {location}
-          {source}
           {images}
         </div>
       </div>;

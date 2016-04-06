@@ -16,9 +16,9 @@ import * as css from "../css-properties/css-properties";
 import {Interactions, filterPositiveIntegers, passThrough} from "../cycle-rx-utils/interactions";
 import {FrontendAppState} from "../frontend-app-state-machine/frontend-app-state";
 import {LocalSettings} from "../local-storage/local-settings-model";
+import {insertCss} from "../style-helpers/insert-css";
 
 var containerStyles = tap({} as CSSProperties)((s) => {
-  s.marginTop = css.Pixels.of(64);
   s.textAlign = css.TextAlign.CENTER;
   s.paddingLeft = css.Pixels.of(16);
   s.paddingRight = css.Pixels.of(16);
@@ -50,13 +50,6 @@ var numeralStyles = tap({} as CSSProperties)((s) => {
   s.fontSize = 27;
 });
 
-var filterInputRosehandleStyles = tap(
-  simpleInputRosehandle(numeralStyles.fontSize as number))(s => {
-  s.marginLeft = css.Pixels.of(-11);
-  s.marginRight = css.Pixels.of(5);
-  s.marginTop = css.Pixels.of(2);
-});
-
 var progressContainerStyles = tap({} as CSSProperties)(s => {
   s.lineHeight = 1.1;
   s.position = css.Position.ABSOLUTE;
@@ -74,26 +67,13 @@ var progressDenominatorStyles = tap({} as CSSProperties)((s) => {
   s.fontSize = 15;
 });
 
-var filterInputRowStyles = tap({} as CSSProperties)(s => {
-  s.marginTop = css.Pixels.of(6);
-});
-
-function filterRow(value:string, onChange:(evt:React.FormEvent)=>void, key:number) {
-  return <div style={filterInputRowStyles} key={key + ""}>
-    <ScrollworkRosehandle
-      style={filterInputRosehandleStyles}/>
-    <input style={simpleInput(css.Pixels.of(100))} value={value} onChange={onChange}>
-    </input>
-  </div>
-}
-
 export interface SummaryPageProps {
-  appState: FrontendAppState
-  onQueueMaxChange?: (v:number)=>void
-  onFilterChange?: (v:[string, number])=>void
-  onNewFilter?: (v:string)=>void
-  onBeginStudying?: (v:any)=>void
-  onRefresh?: (v:any)=>void
+  appState:FrontendAppState
+  onQueueMaxChange?:(v:number)=>void
+  onFilterChange?:(v:[string, number])=>void
+  onNewFilter?:(v:string)=>void
+  onBeginStudying?:(v:any)=>void
+  onRefresh?:(v:any)=>void
 }
 
 export var SummaryPage = component<SummaryPageProps>("Summary",
@@ -106,70 +86,66 @@ export var SummaryPage = component<SummaryPageProps>("Summary",
 
     return {
       view: prop$.map(({appState}) => <div style={backgroundLayer()}>
-          <div style={containerStyles}>
-            <div style={headingStyles}>
-              Welcome back,&nbsp;<span
-              style={nameHighlightStyles}>{appState.clientSession.userName}</span>!
+          <div>
+            <div className="only-desktop" style={{ marginTop: 60 }}>
             </div>
-            <div>
-              Not your account?
-              &nbsp;
-              <a href={Logout.path}>Logout</a>
-            </div>
+            <div style={containerStyles}>
+              <div style={headingStyles}>
+                Welcome back,&nbsp;<span
+                style={nameHighlightStyles}>{appState.clientSession.userName}</span>!
+              </div>
+              <div>
+                Not your account?
+                &nbsp;
+                <a href={Logout.path}>Logout</a>
+              </div>
 
-            <div>
-              <div style={imageContainterStyles}>
-                <BookClosedIcon style={imageStyles}/>
-                <div style={progressContainerStyles}>
-                  <div style={progressNumeratorStyles}>
+              <div>
+                <div style={imageContainterStyles}>
+                  <BookClosedIcon style={imageStyles}/>
+                  <div style={progressContainerStyles}>
+                    <div style={progressNumeratorStyles}>
                     <span
                       style={numeralStyles}>{appState.scheduledStudy.scheduledClozes.length}</span>
-                    <br/>
-                    queued
-                  </div>
-                  <div style={progressDenominatorStyles}>
-                    <ScrollworkRosehandle
-                      style={tap(simpleInputRosehandle(numeralStyles.fontSize as number))(
+                      <br/>
+                      queued
+                    </div>
+                    <div style={progressDenominatorStyles}>
+                      <ScrollworkRosehandle
+                        style={tap(simpleInputRosehandle(numeralStyles.fontSize as number))(
                     s => s.marginLeft = css.Pixels.of(-11))}/>
                     <span style={numeralStyles}>
                       <input value={appState.localSettings.maxQueueSize + ""}
                              onChange={queueMaxInteraction.listener}
                              style={simpleInput(css.Pixels.of(40))}/>
                     </span>
-                    <br/>
-                    max
+                      <br/>
+                      max
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div style={{ lineHeight: 1.2 }}>
-              <div>
-                <a onClick={beginStudyingInteraction.listener} href="#">Begin study</a>&nbsp;
-                <span className="only-desktop-inline" style={shortcutKeyStyles}>&crarr;</span>
-              </div>
-              <div style={{ marginTop: css.Pixels.of(4) }}>
-                <a onClick={refreshInteraction.listener} href="#">Refresh</a>&nbsp;
-                <span className="only-desktop-inline" style={shortcutKeyStyles}>r</span>
-              </div>
-              <div style={{ marginTop: css.Pixels.of(10), marginBottom: css.Pixels.of(5) }}>
-                <ScrollworkMustache style={{ height: css.Pixels.of(20) }}/>
-              </div>
-              Session:&nbsp;
-              <span style={numeralStyles}>{appState.numStudiedCurSession}</span>&nbsp;
+              <div style={{ lineHeight: 1.2 }}>
+                <div>
+                  <a onClick={beginStudyingInteraction.listener} href="#">Begin study</a>&nbsp;
+                  <span className="only-desktop-inline" style={shortcutKeyStyles}>&crarr;</span>
+                </div>
+                <div style={{ marginTop: css.Pixels.of(4) }}>
+                  <a onClick={refreshInteraction.listener} href="#">Refresh</a>&nbsp;
+                  <span className="only-desktop-inline" style={shortcutKeyStyles}>r</span>
+                </div>
+                <div style={{ marginTop: css.Pixels.of(10), marginBottom: css.Pixels.of(5) }}>
+                  <ScrollworkMustache style={{ height: css.Pixels.of(20) }}/>
+                </div>
+                Session:&nbsp;
+                <span style={numeralStyles}>{appState.numStudiedCurSession}</span>&nbsp;
               studied
-              <br/>
-              Due Today:&nbsp;
+                <br/>
+                Due Today:&nbsp;
               <span
                 style={numeralStyles}>{appState.summaryStatsLoaded ? appState.summaryStats.dueToday : "?"}</span>
-              <br/>
-              <br/>
-              Study Filters:&nbsp;
-              <br/>
-              { appState.localSettings.studyFilters.map(
-                (value, idx) => { return filterRow(value, modifyFilterInteraction.listenerForIdx(idx), idx) }).concat(
-                [filterRow("", newFilterInteraction.listener, appState.localSettings.studyFilters.length )]
-                ) }
+              </div>
             </div>
           </div>
         </div>

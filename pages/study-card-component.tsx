@@ -25,7 +25,7 @@ import {
 import {render} from "react-dom";
 
 const flourishHeight = 90;
-const flourishMargin = 20;
+const flourishMargin = 5;
 var flourishStyles = {
   maxHeight: css.Pixels.of(flourishHeight),
   maxWidth: css.Pixels.of(350),
