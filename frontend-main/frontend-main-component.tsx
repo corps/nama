@@ -30,7 +30,7 @@ export var FrontendMainComponent = component<Props>("FrontendMain",
               onFilterChange={!!stateMachine ? stateMachine.changeFilter.listener : null}
               onQueueMaxChange={!!stateMachine ? stateMachine.changeQueueMax.listener : null}
               onBeginStudying={!!stateMachine ? stateMachine.beginStudy.listener : null}
-              onRefresh={!!stateMachine ? stateMachine.visitSummary.listener : null}
+              onRefresh={!!stateMachine ? stateMachine.requestSync.listener : null}
               appState={appState}/>;
           case state.CurrentPage.STUDYING:
             return <StudyPage
