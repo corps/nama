@@ -24,7 +24,7 @@ var studyStorage = {} as LocalStudyStorage;
 var scheduleUpdates:ScheduleUpdate[];
 var scheduledStudy:ScheduledStudy;
 var loadScheduledStudy:Rx.Subject<ScheduledStudy>;
-var requestSync:Rx.Subject<void>;
+var requestSync:Rx.Subject<boolean>;
 var requestNoteUpdate:Rx.Subject<[string, number]>;
 var stubCalls:any[];
 var settingsStorage = {} as LocalSettingsStorage;
@@ -35,7 +35,7 @@ QUnit.module("frontend-sync-service", {
     settings = new LocalSettings();
     stubCalls = [];
     requestNoteUpdate = new Rx.Subject<[string, number]>();
-    requestSync = new Rx.Subject<void>();
+    requestSync = new Rx.Subject<boolean>();
     loadScheduledStudy = new Rx.Subject<ScheduledStudy>();
     finishSync = new Rx.Subject<boolean>();
     fetchSchedule =

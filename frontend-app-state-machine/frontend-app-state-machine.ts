@@ -58,7 +58,7 @@ export class FrontendAppStateMachine {
           this.selectNewStudyIdx.subject.onNext(state.curStudyIdx - 1);
           break;
         case "r":
-          this.visitSummary.subject.onNext(null);
+          this.requestSync.subject.onNext(null);
           break;
         case "a":
           this.answerCard.listener(0.3);
@@ -78,7 +78,8 @@ export class FrontendAppStateMachine {
   visitSummary = tap(this.interactions.interaction<void>())(interaction => {
     this.accumulator<any>(interaction.subject, (_, last) => {
       if (last.clientSession.isLoggedIn()) {
-        // this.requestSync.subject.onNext(null);
+        // Local only sync.
+        this.requestSync.subject.onNext(true);
         
         if (last.currentPage !== CurrentPage.SUMMARY) {
           return transformState(last)(next => next.currentPage = CurrentPage.SUMMARY)
@@ -222,7 +223,7 @@ export class FrontendAppStateMachine {
     })
   });
 
-  requestSync = this.interactions.interaction<void>();
+  requestSync = this.interactions.interaction<boolean>();
 
   requestUpdateNote = this.subject<[string, number]>();
 

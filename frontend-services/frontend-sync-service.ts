@@ -67,8 +67,9 @@ export class FrontendSyncService {
     return Rx.Observable.just(scheduledStudy);
   }
 
-  sync():Rx.Observable<ScheduledStudy> {
+  sync(localOnly = false):Rx.Observable<ScheduledStudy> {
     return this.syncUpdates().ignoreElements().toArray().flatMap(() => {
+      if (localOnly) return Rx.Observable.empty<ScheduledStudy>();
       return this.fetchScheduleBatch();
     }).doOnCompleted(() => {
       this.syncCompleteSubject.onNext(true);
@@ -98,13 +99,13 @@ export class FrontendSyncService {
       });
   }
 
-  connect(requestSync:Rx.Observable<void>,
+  connect(requestSync:Rx.Observable<boolean>,
           loadScheduledStudy:Rx.Observer<ScheduledStudy>,
           finishSync:Rx.Observer<boolean>,
           requestUpdateNote:Rx.Observable<[string, number]>) {
     this.scheduledStudy$.subscribe(loadScheduledStudy);
 
-    requestSync.subscribe(() => this.loadingSubject.onNext(this.sync()));
+    requestSync.subscribe((localOnly) => this.loadingSubject.onNext(this.sync(localOnly)));
     requestUpdateNote.subscribe(([noteId, noteVersion]) => {
       this.loadingSubject.onNext(this.updateNote(noteId, noteVersion));
     });
