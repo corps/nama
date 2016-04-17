@@ -58,7 +58,11 @@ export class FrontendAppStateMachine {
           this.selectNewStudyIdx.subject.onNext(state.curStudyIdx - 1);
           break;
         case "r":
-          this.requestSync.subject.onNext(null);
+          if (state.currentPage === CurrentPage.SUMMARY) {
+            this.requestSync.subject.onNext(null);
+          } else {
+            this.visitSummary.subject.onNext(null);
+          }
           break;
         case "a":
           this.answerCard.listener(0.3);
@@ -80,7 +84,7 @@ export class FrontendAppStateMachine {
       if (last.clientSession.isLoggedIn()) {
         // Local only sync.
         this.requestSync.subject.onNext(true);
-        
+
         if (last.currentPage !== CurrentPage.SUMMARY) {
           return transformState(last)(next => next.currentPage = CurrentPage.SUMMARY)
         }
@@ -308,8 +312,8 @@ export class FrontendAppStateMachine {
 
   private accumulator<T>(source:Rx.Observable<T>, acc:UnboundAccumulator<T>) {
     return source.map(v => (last:FrontendAppState) => {
-        return acc(v, last);
-      })
+      return acc(v, last);
+    })
       .subscribe((f:(last:FrontendAppState)=>FrontendAppState) => {
         Rx.Scheduler.currentThread.schedule(null, () => {
           this.accumulatorSubject.onNext(f);

@@ -87,7 +87,7 @@ export class FrontendServices {
       }))
     });
 
-    var focusDisposable = focus$.subscribe(machine.visitSummary.subject);
+    var focusDisposable = focus$.subscribe(() => machine.visitSummary.subject.onNext(null));
     var keyDisposable = key$.subscribe(machine.pressKey.subject);
 
     machine.appState$.ignoreElements().finally(() => {

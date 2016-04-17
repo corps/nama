@@ -155,7 +155,7 @@ export var SummaryPage = component<SummaryPageProps>("Summary",
         onFilterChange: modifyFilterInteraction.subject,
         onNewFilter: newFilterInteraction.subject,
         onBeginStudying: beginStudyingInteraction.subject,
-        onRefresh: refreshInteraction.subject
+        onRefresh: refreshInteraction.subject.map(() => null)
       }
     }
   });
