@@ -50,8 +50,8 @@ if ('window' in global) {
     }
 
     // set the initial state (but only if browser supports the Page Visibility API)
-    if (this[isHiddenAttr] !== undefined) {
-      onchange({type: this[isHiddenAttr] ? "blur" : "focus"});
+    if ((<any>w.document)[isHiddenAttr] !== undefined) {
+      onchange({type: (<any>w.document)[isHiddenAttr] ? "blur" : "focus"});
     }
   })(window);
 }
