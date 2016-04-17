@@ -25,7 +25,7 @@ export class ProductionConfiguration extends BaseConfiguration {
     this.plugins.push(new AppCachePlugin({
       exclude: [/.*\.appcache/, /.*inline.*/],
       output: "app.appcache",
-      //fallback: [Home.path + " " + Home.path]
+      fallback: [Home.path + " " + Home.path]
     }))
   }
 }
