@@ -5,8 +5,8 @@ import {tap} from "../utils/obj";
 import {DatabaseRx} from "../database-rx/database-rx";
 
 export interface Migration {
-  name: string,
-  contents: string
+  name:string,
+  contents:string
 }
 
 var findDirContents = Rx.Observable.fromNodeCallback<string[], string>(fs.readdir);
@@ -36,7 +36,8 @@ export class Migrator {
   }
 
   findMigrations(dir = path.join(__dirname, "migrations")):Rx.Observable<Migration> {
-    var content$ = findDirContents(dir).selectMany(s => s)
+    var content$ = findDirContents(dir).doOnNext(s => s.sort())
+      .selectMany(s => s)
       .map(name => [name, path.join(dir, name)]);
     return content$
       .concatMap(
@@ -53,11 +54,11 @@ export class Migrator {
   run(migration:Migration):Rx.Observable<Migration> {
     return this.setupMigrations().flatMap(() =>
       this.db.serialize(() => [
-          this.db.exec(this.clean(migration.contents))
-            .map(() => null),
-          this.db.run("INSERT INTO migrations (name) VALUES (?)", [migration.name])
-            .map(() => migration)
-        ])
+        this.db.exec(this.clean(migration.contents))
+          .map(() => null),
+        this.db.run("INSERT INTO migrations (name) VALUES (?)", [migration.name])
+          .map(() => migration)
+      ])
         .catch((e) => {
           return Rx.Observable.throw(new Error(migration.name + " failed: " + e));
         }));
