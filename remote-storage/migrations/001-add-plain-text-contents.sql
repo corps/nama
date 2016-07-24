@@ -1,1 +1,0 @@
-ALTER TABLE noteContents ADD COLUMN plainTextContents VARCHAR NULL;

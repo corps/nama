@@ -1,6 +1,6 @@
-import { Cloze } from "./note-model";
-import { tap } from "../utils/obj";
-import { Schedule } from "./schedule-model";
+import {Cloze} from "./note-model";
+import {tap} from "../utils/obj";
+import {Schedule} from "./schedule-model";
 
 const MINUTE = 1;
 const HOUR = MINUTE * 60;
@@ -22,6 +22,13 @@ export class Scheduler {
     return tap(schedule.clone())(c => {
       answeredTimeMinutes = Math.floor(answeredTimeMinutes);
 
+      if (factor == 0.0) {
+        c.lastAnsweredMinutes = answeredTimeMinutes;
+        c.dueAtMinutes = answeredTimeMinutes + 60;
+
+        return;
+      }
+
       if (factor >= 2) c.isNew = false;
 
       var baseFactor = Math.min(factor, 1.0);
@@ -29,7 +36,8 @@ export class Scheduler {
       var randomFactor = this.random() * VARIANCE + (1.0 - VARIANCE / 2);
 
       var answeredInterval = answeredTimeMinutes - schedule.lastAnsweredMinutes;
-      var currentInterval = Math.max(schedule.intervalMinutes || 0, this.minimalIntervalOf(schedule));
+      var currentInterval = Math.max(schedule.intervalMinutes || 0,
+        this.minimalIntervalOf(schedule));
       var earlyAnswerMultiplier = Math.min(1.0, answeredInterval / currentInterval);
 
       var effectiveFactor = baseFactor + (bonusFactor * earlyAnswerMultiplier * randomFactor);

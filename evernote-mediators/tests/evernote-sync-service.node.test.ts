@@ -20,6 +20,7 @@ function encloseInEnml(body:string) {
 <en-note style="margin:20px">${body}</en-note>`
 }
 
+
 QUnit.test("findOrCreateStudyBook", (assert) => {
   var userStorage = new UserStorage(testObjects.db);
   var scheduleStorage = new MasterScheduleStorage(testObjects.db);

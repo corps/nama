@@ -20,7 +20,7 @@ import {isIOS} from "../utils/browser";
 import {
   EASY_FACTOR,
   FINE_FACTOR,
-  HARD_FACTOR
+  HARD_FACTOR, SKIP_FACTOR
 } from "../frontend-app-state-machine/frontend-app-state-machine";
 import {render} from "react-dom";
 
@@ -119,38 +119,38 @@ var clozeStyles = tap({} as CSSProperties)((s:CSSProperties) => {
 });
 
 interface LocalProps {
-  preMarker: string
-  postMarker: string
-  preCloze: string
-  postCloze: string
-  answerTerm: string
-  answerCloze: string
-  answerDetailsFirstCharacter: string
+  preMarker:string
+  postMarker:string
+  preCloze:string
+  postCloze:string
+  answerTerm:string
+  answerCloze:string
+  answerDetailsFirstCharacter:string
   answerDetails:string[]
-  props: StudyCardProps
-  easyDueAtSecs: number
-  fineDueAtSecs: number
-  hardDueAtSecs: number
-  nowTimeSecs: number
-  wasDueAtSecs: number
-  hint: string
+  props:StudyCardProps
+  easyDueAtSecs:number
+  fineDueAtSecs:number
+  hardDueAtSecs:number
+  nowTimeSecs:number
+  wasDueAtSecs:number
+  hint:string
 }
 
 interface LocalState {
-  questionContainerSize: ClientRect
-  answerContainerSize: ClientRect
-  paragraphAdjustment: number
-  clozeLeft: number
-  answerAdjustment: number
-  isOpen: boolean
+  questionContainerSize:ClientRect
+  answerContainerSize:ClientRect
+  paragraphAdjustment:number
+  clozeLeft:number
+  answerAdjustment:number
+  isOpen:boolean
 }
 
 interface StudyCardProps {
-  note: Note
-  clozeIdentifier: ClozeIdentifier
-  onRequestOpen?: (e:boolean)=>void
-  isOpen?: boolean
-  onAnswer?: (f:number)=>void
+  note:Note
+  clozeIdentifier:ClozeIdentifier
+  onRequestOpen?:(e:boolean)=>void
+  isOpen?:boolean
+  onAnswer?:(f:number)=>void
 }
 
 var initialState = {
@@ -431,6 +431,16 @@ export class StudyCard extends React.Component<StudyCardProps, typeof initialSta
                 {describeDueAt(computedProps.easyDueAtSecs)}
               </div>
               <div style={shortcutKeyStyles}>d</div>
+            </div>
+          </button>
+          <button style={baseButtonStyles}
+                  onClick={(e:SyntheticEvent) => { e.stopPropagation(); this.triggerAnswer(SKIP_FACTOR); }}>
+            Skip
+            <div className="only-desktop">
+              <div style={dueAtStyles}>
+                next in 60 minutes
+              </div>
+              <div style={shortcutKeyStyles}>v</div>
             </div>
           </button>
         </div>

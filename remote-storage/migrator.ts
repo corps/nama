@@ -20,7 +20,7 @@ export class Migrator {
   constructor(private db:DatabaseRx) {
   }
 
-  runAll(migration$ = this.findMigrations()):Rx.Observable<Migration> {
+  runAll(migration$ = this.findMigrations()):Rx.Observable<any> {
     var controlledMigration$ = this.getLatestMigration()
       .combineLatest(migration$,
         (latest, migration) => [latest, migration] as [string, Migration])
@@ -32,11 +32,11 @@ export class Migrator {
       return this.run(migration).doOnCompleted(() => {
         controlledMigration$.request(1);
       });
-    }))(() => controlledMigration$.request(1));
+    }))(() => controlledMigration$.request(1)).ignoreElements().toArray();
   }
 
   findMigrations(dir = path.join(__dirname, "migrations")):Rx.Observable<Migration> {
-    var content$ = findDirContents(dir).doOnNext(s => s.sort())
+    var content$ = findDirContents(dir)
       .selectMany(s => s)
       .map(name => [name, path.join(dir, name)]);
     return content$
@@ -48,7 +48,7 @@ export class Migrator {
           name: name,
           contents: c
         };
-      });
+      }).toArray().doOnNext(s => s.sort((a, b) => a.name < b.name ? -1 : 1)).selectMany(s => s);
   }
 
   run(migration:Migration):Rx.Observable<Migration> {

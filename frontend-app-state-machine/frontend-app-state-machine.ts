@@ -27,6 +27,7 @@ interface UnboundAccumulator<T> {
 export const EASY_FACTOR = 4.0;
 export const FINE_FACTOR = 2.0;
 export const HARD_FACTOR = 0.3;
+export const SKIP_FACTOR = 0.0;
 
 export class FrontendAppStateMachine {
   private scheduler = new Scheduler();
@@ -72,6 +73,9 @@ export class FrontendAppStateMachine {
           break;
         case "d":
           this.answerCard.listener(4.0);
+          break;
+        case "v":
+          this.answerCard.listener(0.0);
           break;
       }
 
