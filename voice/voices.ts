@@ -1,6 +1,8 @@
 import Rx = require("rx");
 
 var voices = new Promise<SpeechSynthesisVoice[]>((resolve, reject) => {
+  if (typeof window === "undefined") return resolve([]);
+
   var start = Date.now();
 
   var timer = setInterval(() => {
