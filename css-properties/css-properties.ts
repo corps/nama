@@ -56,6 +56,7 @@ export class Display {
     return this.value;
   }
 
+  static NONE = new Display("none");
   static BLOCK = new Display("block");
   static INLINE = new Display("inline");
   static INLINE_BLOCK = new Display("inline-block");

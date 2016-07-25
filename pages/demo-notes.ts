@@ -44,6 +44,24 @@ export function buildLongNote() {
   return note;
 }
 
+export function buildSpeakNote() {
+  var note = new Note();
+  var term1 = new Term();
+  var cloze1 = new Cloze();
+
+  term1.details = shortDetails;
+  term1.marker = "1";
+  term1.original = "テスト";
+  term1.clozes.push(cloze1);
+
+  cloze1.segment = "speak:ja-JP:https://dl.dropboxusercontent.com/u/63194950/glossika/JAYUE-F2-GMS/JAYUE-F2-GMS-C-1001_silence_01.mp3";
+  note.terms.push(term1);
+
+  note.id = "note1";
+  note.text = "これはテスト[1]だけです";
+  return note;
+}
+
 export function buildShortNote() {
   var note = new Note();
   var term1 = new Term();

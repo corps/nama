@@ -2,7 +2,7 @@
   "name": "nama",
   "version": "0.0.1",
   "scripts": {
-    "compile": "tsc",
+    "compile": "./node_modules/.bin/tsc",
     "dev-server": "node webpack/dev-server.js",
     "build-frontend": "npm run compile && node webpack/build-frontend.js",
     "run-latest-node-test": "node qunit-runner/run-latest-node.js",

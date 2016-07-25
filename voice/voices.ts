@@ -39,4 +39,4 @@ export function speak(text:string, lang:string) {
       window.speechSynthesis.speak(utterance);
     }).then(null, ((e) => reject(e)));
   })
-}
+};

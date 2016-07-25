@@ -1,10 +1,10 @@
 import * as React from "react";
-import { component } from "../cycle-rx-utils/components";
+import {component} from "../cycle-rx-utils/components";
 import * as Rx from "rx-lite";
 import {main} from "../cycle-rx-utils/bundles";
 import {StudyCard} from "./study-card-component";
 import {backgroundLayer} from "../common-styles/layouts";
-import {buildLongNote} from "./demo-notes";
+import {buildLongNote, buildSpeakNote} from "./demo-notes";
 import {ClozeIdentifier} from "../study-model/note-model";
 import {buildImageResource} from "./demo-notes";
 import {buildShortNote} from "./demo-notes";
@@ -15,11 +15,12 @@ var background = backgroundLayer();
 export var StudyCardTest = component<{}>("StudyCardtest", (interactions, prop$) => {
   var openInteraction = interactions.interaction<boolean>();
   var changeNoteInteraction = interactions.interaction<any>();
-  var note = buildLongNote();
-  var note2 = buildShortNote();
+  var note1 = buildSpeakNote();
+  var note2 = buildLongNote();
+  var note3 = buildShortNote();
   var isOpen$ = openInteraction.subject.startWith(false);
   var note$ = changeNoteInteraction.subject.scan<number>(count => count + 1, 0).startWith(0)
-    .map(c => c % 2 === 0 ? note : note2).doOnNext(() => openInteraction.listener(false));
+    .map(c => [note1, note2, note3][c % 3]).doOnNext(() => openInteraction.listener(false));
 
   var state$ = isOpen$.combineLatest<Note, [boolean, Note]>(note$, (o, n) => [o, n]);
 
