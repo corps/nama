@@ -23,6 +23,7 @@ import {
   HARD_FACTOR, SKIP_FACTOR
 } from "../frontend-app-state-machine/frontend-app-state-machine";
 import {render} from "react-dom";
+import {speak} from "../voice/voices";
 
 const flourishHeight = 90;
 const flourishMargin = 5;
@@ -43,7 +44,7 @@ var dueAtStyles = tap({} as CSSProperties)((s:CSSProperties) => {
 
 var answerDetailsBlockStyles = tap({} as CSSProperties)((s:CSSProperties) => {
   s.width = css.Percentage.of(100);
-  s.overflowX = "scroll";
+  s.overflowX = "auto";
   s.WebkitOverflowScrolling = "touch";
 });
 
@@ -153,6 +154,12 @@ interface StudyCardProps {
   onAnswer?:(f:number)=>void
 }
 
+interface SpeakOptions {
+  text:string,
+  url?:string,
+  lang:string
+}
+
 var initialState = {
   questionContainerSize: null as ClientRect,
   answerContainerSize: null as ClientRect,
@@ -166,7 +173,13 @@ export class StudyCard extends React.Component<StudyCardProps, typeof initialSta
   state = initialState;
   readyForClozeAdjustment = false;
   resizeSubject = new Rx.Subject<any>();
-  onResize = () => this.resizeSubject.onNext(null)
+  onResize = () => this.resizeSubject.onNext(null);
+  audioCache = {} as {[k:string]:HTMLAudioElement};
+
+  getAudio = (url:string) => {
+    var audioCache = this.audioCache;
+    return (audioCache[url] = audioCache[url] || new Audio(url));
+  };
 
   handleOnResize = () => {
     this.adjustParagraph();
@@ -236,9 +249,23 @@ export class StudyCard extends React.Component<StudyCardProps, typeof initialSta
     var wasDueAtSecs = cloze.schedule.dueAtMinutes * 60;
     var hint = term.hint;
 
+    var speakOptions = null as SpeakOptions;
+    if (answerCloze.indexOf("speak:") == 0) {
+      var speakParams = answerCloze.split(":");
+      speakOptions = {
+        text: preMarker + term.original + postMarker,
+        lang: speakParams[1],
+        url: speakParams.slice(2).join(":")
+      }
+
+      answerDetailsFirstCharacter = speakOptions.text[0];
+      answerDetails = (speakOptions.text.slice(1) + "\n\n" + answerCleaned).split("\n");
+    }
+
     return {
       preMarker,
       postMarker,
+      speakOptions,
       preCloze,
       postCloze,
       answerTerm,
@@ -341,6 +368,11 @@ export class StudyCard extends React.Component<StudyCardProps, typeof initialSta
 
     var computedProps = this.computeClozeProps();
 
+    var audio = null as HTMLAudioElement;
+    if (computedProps.speakOptions && computedProps.speakOptions.url) {
+      audio = this.getAudio(computedProps.speakOptions.url);
+    }
+
     var describeDueAt = (dueInSecs:number) =>
       moment.duration((dueInSecs - computedProps.nowTimeSecs) * 1000).humanize(true);
 
@@ -349,7 +381,7 @@ export class StudyCard extends React.Component<StudyCardProps, typeof initialSta
     return <div onTouchEnd={() => this.clearSelections()} onMouseUp={() => this.clearSelections()}
                 style={topContainerStyles}>
       <div style={headerStyles}>
-        { this.state.isOpen
+        { this.state.isOpen && !computedProps.speakOptions
           ? <div>
           <span style={answerTermStyles}>{computedProps.answerTerm}</span>
           ---
@@ -363,6 +395,7 @@ export class StudyCard extends React.Component<StudyCardProps, typeof initialSta
       </div>
       <div onClick={(e) => { e.preventDefault(); this.triggerOpen(); }}
            onTouchTap={(e) => { e.preventDefault(); this.triggerOpen(); }}>
+
         <ScreenFitVerticalParagraph
           key={clozeIdStr}
           heightGiven={flourishHeight + flourishMargin + headerHeight}
@@ -380,9 +413,28 @@ export class StudyCard extends React.Component<StudyCardProps, typeof initialSta
               </span>)}
             </div>
           </div>
+            : computedProps.speakOptions ? <div key="question" style={questionContainerStyles}
+                                                ref={(e) => this.questionContainer = e as any}>
+            <div style={questionOffsetSpan} ref={(e) => this.questionAdjustment = e as any}>
+            </div>
+            <div ref={(e) => this.questionSpan = e as any}
+                 style={{ display: css.Display.INLINE_BLOCK }}>
+              <button style={assign<any>({}, baseButtonStyles, { display: "inline-block" })}
+                      onTouchTap={(e) => { e.preventDefault(); e.stopPropagation(); speak(computedProps.speakOptions.text, computedProps.speakOptions.lang) }}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation();  }}>
+                Synth
+              </button>
+
+              { audio ?
+                <button style={assign<any>({}, baseButtonStyles, { display: "inline-block"})}
+                        onTouchTap={(e) => { e.preventDefault(); e.stopPropagation(); audio.play() }}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                  Audio
+                </button> : null }
+            </div>
+          </div>
             : <div key="question" style={questionContainerStyles}
                    ref={(e) => this.questionContainer = e as any}>
-
             <div style={questionOffsetSpan} ref={(e) => this.questionAdjustment = e as any}>
             </div>
             {computedProps.preMarker}
