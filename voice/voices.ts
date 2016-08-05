@@ -10,11 +10,7 @@ var voices = new Promise<SpeechSynthesisVoice[]>((resolve, reject) => {
 
     if (voices.length > 0 || Date.now() - start > 5000) {
       clearInterval(timer);
-      if (voices.length > 0) {
-        resolve(voices);
-      } else {
-        reject(new Error("Could not resolve voices"));
-      }
+      resolve(voices);
     }
   }, 1000);
 });
@@ -26,8 +22,13 @@ export function speak(text:string, lang:string) {
       var voice = voices.filter(v => v.lang === lang)[0];
 
       utterance.text = text;
-      utterance.voice = voice;
-      utterance.voiceURI = voice.voiceURI;
+
+      if (voice) {
+        utterance.voice = voice;
+        utterance.voiceURI = voice.voiceURI;
+      } else {
+        utterance.lang = lang;
+      }
 
       if (/iPhone|iPad/.test(window.navigator.userAgent)) {
         utterance.rate = 0.5;

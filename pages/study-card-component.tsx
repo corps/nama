@@ -474,8 +474,9 @@ export class StudyCard extends React.Component<StudyCardProps, typeof initialSta
               <div style={shortcutKeyStyles}>s</div>
             </div>
           </button>
-          <button style={baseButtonStyles}
-                  onClick={(e:SyntheticEvent) => { e.stopPropagation(); this.triggerAnswer(EASY_FACTOR); }}>
+          { !computedProps.speakOptions
+            ? <button style={baseButtonStyles}
+                      onClick={(e:SyntheticEvent) => { e.stopPropagation(); this.triggerAnswer(EASY_FACTOR); }}>
             Easy
             <div className="only-desktop">
               <div style={dueAtStyles}>
@@ -485,8 +486,8 @@ export class StudyCard extends React.Component<StudyCardProps, typeof initialSta
               <div style={shortcutKeyStyles}>d</div>
             </div>
           </button>
-          <button style={baseButtonStyles}
-                  onClick={(e:SyntheticEvent) => { e.stopPropagation(); this.triggerAnswer(SKIP_FACTOR); }}>
+            : <button style={baseButtonStyles}
+                      onClick={(e:SyntheticEvent) => { e.stopPropagation(); this.triggerAnswer(SKIP_FACTOR); }}>
             Skip
             <div className="only-desktop">
               <div style={dueAtStyles}>
@@ -494,7 +495,7 @@ export class StudyCard extends React.Component<StudyCardProps, typeof initialSta
               </div>
               <div style={shortcutKeyStyles}>v</div>
             </div>
-          </button>
+          </button> }
         </div>
           : <div style={flourishContainerStyles}>
           <ScrollworkFlourish style={flourishStyles}></ScrollworkFlourish>

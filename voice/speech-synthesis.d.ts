@@ -22,6 +22,7 @@ declare class SpeechSynthesisUtterance {
   volume:number;
   rate:number;
   pitch:number;
+  lang:string;
   voiceURI:string;
   voice:SpeechSynthesisVoice;
 
