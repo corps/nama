@@ -1,6 +1,6 @@
-import { tap } from "../utils/obj";
-import { Schedule } from "./schedule-model";
-import { arrayOf, arrayWithSome } from "../model-helpers/model-helpers";
+import {tap} from "../utils/obj";
+import {Schedule} from "./schedule-model";
+import {arrayOf, arrayWithSome} from "../model-helpers/model-helpers";
 import {escapeRegex} from "../utils/string";
 
 const fullStops = [
@@ -29,28 +29,41 @@ export class Note {
   terms = arrayOf(Term);
   version = 0;
 
-  findTermRegion(term:Term) {
+  findTermRegion(term:Term, text:string) {
     var fullMarker = term.original + "[" + term.marker + "]";
-    var start = this.text.indexOf(fullMarker);
+    var start = text.indexOf(fullMarker);
     if (start === -1) {
-      start = this.text.indexOf(term.marker);
+      start = text.indexOf(term.marker);
       return [start, start + term.marker.length]
     }
     return [start, start + fullMarker.length];
   }
 
+  findTermRegionInReplaced(term:Term):[number, number, string] {
+    var text = this.text;
+    for (var i = 0; i < this.terms.length; ++i) {
+      if (this.terms[i].marker === term.marker) continue;
+      var [s, e] = this.findTermRegion(this.terms[i], text);
+      text = text.slice(0, s) + this.terms[i].original + text.slice(e);
+    }
+
+    var [s, e] = this.findTermRegion(term, text);
+
+    return [s, e, text];
+  }
+
   termContext(term:Term, grabCharsMax = 60):[string, string, string] {
-    var [termStart, termEnd] = this.findTermRegion(term);
-    var leftSide = this.text.slice(0, termStart);
+    var [termStart, termEnd, text] = this.findTermRegionInReplaced(term);
+    var leftSide = text.slice(0, termStart);
     var partialLeftSide = leftSide.slice(-grabCharsMax);
     var unusedLeft = leftSide.slice(0, leftSide.length - partialLeftSide.length);
     leftSide = unusedLeft.match(allNotFullStopTailRegex)[0] + partialLeftSide;
 
-    var rightSide = this.text.slice(termEnd, this.text.length);
+    var rightSide = text.slice(termEnd);
     var unusedRight = rightSide.slice(grabCharsMax);
     rightSide = rightSide.slice(0, grabCharsMax) + unusedRight.match(allNotFullStopHeadRegex)[0];
 
-    return [leftSide.replace(/^\s*/, ""), this.text.slice(termStart, termEnd),
+    return [leftSide.replace(/^\s*/, ""), text.slice(termStart, termEnd),
       rightSide.replace(/\s*$/, "")];
   }
 

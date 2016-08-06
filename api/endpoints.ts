@@ -3,8 +3,8 @@ import * as model from "./api-models";
 export interface Endpoint<Req, Res> {
   Request:{ new():Req },
   Response:{ new():Res },
-  path: string,
-  subPath: string
+  path:string,
+  subPath:string
 }
 
 export class Path {
@@ -29,7 +29,7 @@ export class Path {
   Endpoint = class MountedEndpoint<Req, Res> extends this.Subpath implements Endpoint<Req, Res> {
     constructor(path:string,
                 public Request:{ new():Req },
-                public Response:{ new(): Res }) {
+                public Response:{ new():Res }) {
       super(path);
     }
   }
@@ -55,3 +55,9 @@ export var FetchSchedule = new Api.Endpoint(
 
 export var SummaryStats = new Api.Endpoint(
   "/summary", model.SummaryStatsRequest, model.SummaryStatsResponse);
+
+export var PutMcds = new Api.Endpoint(
+  "/update_mcds", model.PutMcdsRequest, model.PutMcdsResponse);
+
+export var GetMcds = new Api.Endpoint(
+  "/mcds", model.GetMcdsRequest, model.GetMcdsResponse);

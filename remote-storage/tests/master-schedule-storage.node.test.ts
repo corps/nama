@@ -1,14 +1,24 @@
 import * as QUnit from "qunitjs";
 import * as Rx from "rx";
-import { User } from "../../user-model/user-model";
-import { tap } from "../../utils/obj";
-import { ClozeIdentifier } from "../../study-model/note-model";
-import { Schedule } from "../../study-model/schedule-model";
-import { MasterScheduleStorage, ScheduleRow } from "../master-schedule-storage";
-import { testObjects, integrationModule } from "../../integration-test-helpers/integration-test-helpers";
+import {User, OauthLogin} from "../../user-model/user-model";
+import {tap} from "../../utils/obj";
+import {ClozeIdentifier} from "../../study-model/note-model";
+import {Schedule} from "../../study-model/schedule-model";
+import {MasterScheduleStorage, ScheduleRow} from "../master-schedule-storage";
+import {
+  testObjects,
+  integrationModule
+} from "../../integration-test-helpers/integration-test-helpers";
 import {UserStorage} from "../user-storage";
 
 integrationModule(__filename);
+
+function withoutIds<T>(v:T[]) {
+  v.forEach((ve:any) => {
+    delete ve["id"]
+  });
+  return v;
+}
 
 QUnit.test("recordNoteContents & getNoteContents", (assert) => {
   var storage = new MasterScheduleStorage(testObjects.db);
@@ -16,41 +26,123 @@ QUnit.test("recordNoteContents & getNoteContents", (assert) => {
   storage.getNoteContents("doesnotexistyet").flatMap((v) => {
     assert.equal(v, null);
 
-    return storage.recordNoteContents("noteId", 4, "Some contents");
+    return storage.recordNoteContents(testObjects.user.id, "noteId", 4, "Some contents");
   }).flatMap(() => {
     return storage.getNoteContents("noteId").doOnNext((v) => {
       assert.deepEqual(v, {
         id: 1,
         noteId: "noteId",
         noteVersion: 4,
-        contents: "Some contents"
+        contents: "Some contents",
+        userId: testObjects.user.id,
       });
     })
   }).flatMap(() => {
-    return storage.recordNoteContents("noteId", 6, "More contents");
+    return storage.recordNoteContents(testObjects.user.id, "noteId", 6, "More contents");
   }).flatMap(() => {
     return storage.getNoteContents("noteId").doOnNext((v) => {
       assert.deepEqual(v, {
         id: 1,
         noteId: "noteId",
         noteVersion: 6,
+        userId: testObjects.user.id,
         contents: "More contents"
       });
     })
   }).flatMap(() => {
-    return storage.recordNoteContents("noteId", 6, "Will not become this");
+    return storage.recordNoteContents(testObjects.user.id, "noteId", 6, "Will not become this");
   }).flatMap(() => {
     return storage.getNoteContents("noteId").doOnNext((v) => {
       assert.deepEqual(v, {
         id: 1,
         noteId: "noteId",
         noteVersion: 6,
+        userId: testObjects.user.id,
         contents: "More contents"
       });
     })
   }).doOnError((e) => {
     assert.ok(false, e + "");
   }).finally(assert.async())
+    .subscribe();
+});
+
+QUnit.test("getRecentContents with no provided exclude ids works", (assert) => {
+  var storage = new MasterScheduleStorage(testObjects.db);
+  var userStorage = new UserStorage(testObjects.db);
+
+  var login = new OauthLogin();
+  var userId1:number;
+  var userId2:number;
+
+  login.provider = "test-provider";
+  login.externalId = "abcdefg";
+
+  userStorage.createOrUpdateUserForLogin(login).flatMap((user) => {
+    userId1 = user;
+    login.externalId = "abcdefghijkl";
+    return userStorage.createOrUpdateUserForLogin(login);
+  }).flatMap((user) => {
+    userId2 = user;
+
+    return Rx.Observable.merge(
+      storage.recordNoteContents(userId2, "2-a", 1, "2-a-contents"),
+      storage.recordNoteContents(userId1, "1-a", 1, "1-a-contents"),
+      storage.recordNoteContents(userId2, "2-b", 1, "2-b-contents"),
+      storage.recordNoteContents(userId1, "1-b", 1, "1-b-contents"),
+      storage.recordNoteContents(userId1, "1-c", 1, "1-c-contents"),
+      storage.recordNoteContents(userId1, "1-d", 1, "1-d-contents")
+    ).toArray();
+  }).flatMap(() => {
+    return storage.getRecentContents(userId1, 3, []).toArray();
+  }).doOnNext((contentRows) => {
+    assert.deepEqual(withoutIds(contentRows),
+      [{"noteId": "1-d", "noteVersion": 1, "contents": "1-d-contents", "userId": 2},
+        {"noteId": "1-c", "noteVersion": 1, "contents": "1-c-contents", "userId": 2},
+        {"noteId": "1-b", "noteVersion": 1, "contents": "1-b-contents", "userId": 2}]);
+  }).catch((e) => {
+    assert.ok(false, e + "");
+    return Rx.Observable.just(null);
+  }).doOnCompleted(assert.async())
+    .subscribe();
+});
+
+QUnit.test("getRecentContents with some provided excluded ids works", (assert) => {
+  var storage = new MasterScheduleStorage(testObjects.db);
+  var userStorage = new UserStorage(testObjects.db);
+
+  var login = new OauthLogin();
+  var userId1:number;
+  var userId2:number;
+
+  login.provider = "test-provider";
+  login.externalId = "abcdefg";
+
+  userStorage.createOrUpdateUserForLogin(login).flatMap((user) => {
+    userId1 = user;
+    login.externalId = "abcdefghijkl";
+    return userStorage.createOrUpdateUserForLogin(login);
+  }).flatMap((user) => {
+    userId2 = user;
+
+    return Rx.Observable.merge(
+      storage.recordNoteContents(userId2, "2-a", 1, "2-a-contents"),
+      storage.recordNoteContents(userId1, "1-a", 1, "1-a-contents"),
+      storage.recordNoteContents(userId2, "2-b", 1, "2-b-contents"),
+      storage.recordNoteContents(userId1, "1-b", 1, "1-b-contents"),
+      storage.recordNoteContents(userId1, "1-c", 1, "1-c-contents"),
+      storage.recordNoteContents(userId1, "1-d", 1, "1-d-contents")
+    ).toArray();
+  }).flatMap(() => {
+    return storage.getRecentContents(userId1, 3, ["1-c", "1-b"]).toArray();
+  }).doOnNext((contentRows) => {
+    assert.deepEqual(withoutIds(contentRows),
+      [{"noteId": "1-d", "noteVersion": 1, "contents": "1-d-contents", "userId": 2},
+        {"noteId": "1-a", "noteVersion": 1, "contents": "1-a-contents", "userId": 2}]);
+  }).catch((e) => {
+    assert.ok(false, e + "");
+    return Rx.Observable.just(null);
+  }).doOnCompleted(assert.async())
     .subscribe();
 });
 

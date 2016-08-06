@@ -164,7 +164,7 @@ export class EvernoteSyncService {
       var markers = note.terms.map(term => term.marker);
 
       processes.push(
-        this.scheduleStorage.recordNoteContents(evernote.guid, evernote.updateSequenceNum,
+        this.scheduleStorage.recordNoteContents(user.id, evernote.guid, evernote.updateSequenceNum,
           serializeEvernoteThrift(evernote)));
 
       processes.push(this.scheduleStorage.deleteAllOtherTerms(note.id, markers, version));

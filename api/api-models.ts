@@ -1,6 +1,6 @@
-import { ClozeIdentifier, Note, Resource } from "../study-model/note-model";
-import { Schedule } from "../study-model/schedule-model";
-import { arrayOf, arrayWithSome } from "../model-helpers/model-helpers";
+import {ClozeIdentifier, Note, Resource} from "../study-model/note-model";
+import {Schedule} from "../study-model/schedule-model";
+import {arrayOf, arrayWithSome} from "../model-helpers/model-helpers";
 
 export class ScheduledClozeIdentifier {
   clozeIdentifier = new ClozeIdentifier();
@@ -47,6 +47,22 @@ export class FetchScheduleResponse {
   notes = arrayOf(Note);
   scheduled = arrayOf(ScheduledClozeIdentifier);
   expires = 0;
+}
+
+export class GetMcdsRequest {
+  ignoreIds = arrayWithSome("");
+}
+
+export class GetMcdsResponse {
+  notes = arrayOf(Note);
+}
+
+export class PutMcdsRequest {
+  notes = arrayOf(Note);
+}
+
+export class PutMcdsResponse {
+  completedIds = arrayWithSome("");
 }
 
 export class SummaryStatsRequest {

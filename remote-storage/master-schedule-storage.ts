@@ -1,18 +1,18 @@
-import { ClozeIdentifier } from "../study-model/note-model";
-import { Schedule } from "../study-model/schedule-model";
+import {ClozeIdentifier} from "../study-model/note-model";
+import {Schedule} from "../study-model/schedule-model";
 import * as Rx from "rx";
-import { User } from "../user-model/user-model";
-import { tap } from "../utils/obj";
-import { DatabaseRx } from "../database-rx/database-rx";
+import {User} from "../user-model/user-model";
+import {tap} from "../utils/obj";
+import {DatabaseRx} from "../database-rx/database-rx";
 
 export class MasterScheduleStorage {
   constructor(private db:DatabaseRx) {
   }
 
-  recordNoteContents(noteId:string, noteVersion:number, contents:string):Rx.Observable<void> {
-    return this.db.run("INSERT INTO noteContents (noteId, noteVersion, contents) " +
-      "VALUES (?, ?, ?);", [
-      noteId, noteVersion, contents
+  recordNoteContents(userId:number, noteId:string, noteVersion:number, contents:string):Rx.Observable<void> {
+    return this.db.run("INSERT INTO noteContents (userId, noteId, noteVersion, contents) " +
+      "VALUES (?, ?, ?, ?);", [
+      userId, noteId, noteVersion, contents
     ]).catch((e) => {
       if (e.toString().indexOf("UNIQUE constraint failed") != -1) {
         return this.db.run(
@@ -27,6 +27,15 @@ export class MasterScheduleStorage {
 
   getNoteContents(noteId:string):Rx.Observable<NoteContentsRow> {
     return this.db.get("SELECT * FROM noteContents WHERE noteId = ?", [noteId]);
+  }
+
+  getRecentContents(userId:number, count:number,
+                    excludedIds:string[]):Rx.Observable<NoteContentsRow> {
+    var noteIdClause = excludedIds.length > 0 ? "noteId NOT IN (" + excludedIds.map(s => "?")
+      .join(",") + ") AND " : "";
+    return this.db.each(
+      "SELECT * FROM noteContents WHERE " + noteIdClause + "userId = ? ORDER BY id DESC LIMIT ?",
+      (excludedIds as any[]).concat([userId, count]));
   }
 
   recordSchedule(user:User,
@@ -139,20 +148,20 @@ export class MasterScheduleStorage {
 }
 
 export interface ScheduleRow {
-  id: number
-  clozeIdentifier: string
-  studyBookId: number
-  noteId: string
-  marker: string
-  clozeIdx: number
-  dueAtMinutes: number
-  noteVersion: number
-  tags: string
+  id:number
+  clozeIdentifier:string
+  studyBookId:number
+  noteId:string
+  marker:string
+  clozeIdx:number
+  dueAtMinutes:number
+  noteVersion:number
+  tags:string
 }
 
 export interface NoteContentsRow {
-  id: number
-  noteId: string
-  noteVersion: number
-  contents: string
+  id:number
+  noteId:string
+  noteVersion:number
+  contents:string
 }

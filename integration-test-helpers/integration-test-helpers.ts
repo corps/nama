@@ -172,7 +172,6 @@ export function testHandlerSync<Req, Res>(req:Req, res:Res,
 export function integrationModule(name:string) {
   QUnit.module(name, {
     beforeEach: (assert) => {
-      console.log("going");
       testObjects.user = new User();
       var serverConfig = tap(new WebServerConfig())(c => {
         assignFromJson(c, testConfig);

@@ -15,8 +15,12 @@ var voices = new Promise<SpeechSynthesisVoice[]>((resolve, reject) => {
   }, 1000);
 });
 
+var running = false;
 export function speak(text:string, lang:string) {
-  return new Promise<boolean>((resolve, reject) => {
+  if (running) return;
+  running = true;
+
+  return new Promise<any>((resolve, reject) => {
     voices.then(voices => {
       var utterance = new SpeechSynthesisUtterance();
       var voice = voices.filter(v => v.lang === lang)[0];
@@ -30,14 +34,14 @@ export function speak(text:string, lang:string) {
         utterance.lang = lang;
       }
 
-      if (/iPhone|iPad/.test(window.navigator.userAgent)) {
-        utterance.rate = 0.5;
-      }
-
       utterance.onend = () => resolve(false);
       utterance.onerror = (e) => reject(e);
 
       window.speechSynthesis.speak(utterance);
     }).then(null, ((e) => reject(e)));
-  })
+  }).then(function () {
+    running = false;
+  }, function () {
+    running = false;
+  });
 };
