@@ -23,6 +23,8 @@ export class GetMcdsService implements ServiceHandler<GetMcdsRequest, GetMcdsRes
   handle(req:GetMcdsRequest, res:GetMcdsResponse, user$:Rx.Observable<User>) {
     var userClient:EvernoteClientRx;
     return user$.flatMap(user => {
+      return this.syncService.sync(user).ignoreElements().toArray().map(() => user);
+    }).flatMap(user => {
       userClient = this.evernoteClient.forUser(user);
 
       return this.schedulerStorage.getRecentContents(user.id, 20, req.ignoreIds);
