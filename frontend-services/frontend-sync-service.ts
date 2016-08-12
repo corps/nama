@@ -9,13 +9,17 @@ import {ClientSession} from "../sessions/session-model";
 import {FrontendAppState} from "../frontend-app-state-machine/frontend-app-state";
 import {Resource} from "../study-model/note-model";
 import {loadClientSession} from "../sessions/fronted-session";
+import {LocalMcdState, LocalMcdStorage} from "../local-storage/local-mcd-storage";
 
 export class FrontendSyncService {
-  constructor(private studyStorage:LocalStudyStorage,
-              private settingsStorage:LocalSettingsStorage,
-              private fetchSchedule:AjaxHandler<apiModels.FetchScheduleRequest, apiModels.FetchScheduleResponse>,
-              private updateSchedule:AjaxHandler<apiModels.UpdateScheduleRequest, apiModels.UpdateScheduleResponse>,
-              private getLatestNote:AjaxHandler<apiModels.GetLatestNoteRequest, apiModels.GetLatestNoteResponse>) {
+  constructor(private studyStorage: LocalStudyStorage,
+              private settingsStorage: LocalSettingsStorage,
+              private mcdStorage: LocalMcdStorage,
+              private putMcds: AjaxHandler<apiModels.PutMcdsRequest, apiModels.PutMcdsResponse>,
+              private getMcds: AjaxHandler<apiModels.GetMcdsRequest, apiModels.GetMcdsResponse>,
+              private fetchSchedule: AjaxHandler<apiModels.FetchScheduleRequest, apiModels.FetchScheduleResponse>,
+              private updateSchedule: AjaxHandler<apiModels.UpdateScheduleRequest, apiModels.UpdateScheduleResponse>,
+              private getLatestNote: AjaxHandler<apiModels.GetLatestNoteRequest, apiModels.GetLatestNoteResponse>) {
   }
 
   private loadingSubject = new Rx.Subject<Rx.Observable<ScheduledStudy>>();
@@ -23,27 +27,62 @@ export class FrontendSyncService {
   scheduledStudy$ = this.loadingSubject.switch();
   syncCompletion$ = this.syncCompleteSubject.asObservable();
 
-  private syncUpdates():Rx.Observable<any> {
+  private syncSavedAnswers(): Rx.Observable<number> {
     var updates = this.studyStorage.getScheduleUpdates();
     if (updates.length == 0) {
-      return Rx.Observable.empty();
+      return Rx.Observable.just(0);
     }
 
     var request = new apiModels.UpdateScheduleRequest();
     request.schedules = updates.slice(0, 10);
 
-    return this.updateSchedule.request(request, loadClientSession()).doOnNext(response => {
+    return this.updateSchedule.request(request, loadClientSession()).flatMap(response => {
       this.studyStorage.storeUpdateScheduleResponse(response);
-    }).retry(3).flatMap(() => {
+
       if (updates.length > 10) {
-        return this.syncUpdates();
+        return this.syncSavedAnswers();
       }
 
-      return Rx.Observable.empty();
+      return Rx.Observable.just(response.completed.length);
     });
   }
 
-  private fetchScheduleBatch():Rx.Observable<ScheduledStudy> {
+  private syncCommittedMcds(): Rx.Observable<number> {
+    var updates = this.mcdStorage.getState().committed;
+    if (updates.length == 0) {
+      return Rx.Observable.just(0);
+    }
+
+    var request = new apiModels.PutMcdsRequest();
+    request.notes = updates.slice(0, 10);
+
+    return this.putMcds.request(request, loadClientSession()).flatMap(response => {
+      var state = this.mcdStorage.getState();
+      state.committed = state.committed.filter(n => response.completedIds.indexOf(n.id) == -1);
+      this.mcdStorage.writeState(state);
+
+      if (updates.length > 10) {
+        return this.syncCommittedMcds();
+      }
+
+      return Rx.Observable.just(response.completedIds.length);
+    })
+  }
+
+  private syncNewMcds(): Rx.Observable<any> {
+    var state = this.mcdStorage.getState();
+    var request = new apiModels.GetMcdsRequest();
+
+    request.ignoreIds = state.committed.map(n => n.id).concat([state.editing.id]);
+
+    return this.getMcds.request(request, loadClientSession()).doOnNext(response => {
+      var state = this.mcdStorage.getState();
+      state.queue = response.notes;
+      this.mcdStorage.writeState(state);
+    })
+  }
+
+  private fetchScheduleBatch(): Rx.Observable<ScheduledStudy> {
     var session = loadClientSession();
     var settings = this.settingsStorage.loadSettings();
     var request = new apiModels.FetchScheduleRequest();
@@ -52,7 +91,7 @@ export class FrontendSyncService {
     request.requestedNum = Math.min(settings.maxQueueSize - curQueueSize, 5);
     request.studyFilters = settings.studyFilters;
     if (request.requestedNum > 0) {
-      return this.fetchSchedule.request(request, session).retry(3).flatMap(response => {
+      return this.fetchSchedule.request(request, session).flatMap(response => {
         this.studyStorage.storeFetchResponse(response);
         if (response.scheduled.length > 0) {
           return Rx.Observable.merge<ScheduledStudy>(
@@ -67,26 +106,38 @@ export class FrontendSyncService {
     return Rx.Observable.just(scheduledStudy);
   }
 
-  sync(localOnly = false):Rx.Observable<ScheduledStudy> {
-    return this.syncUpdates().ignoreElements().toArray().flatMap(() => {
+  sync(localOnly = false): Rx.Observable<ScheduledStudy> {
+    var syncedAnswerCount = 0;
+
+    var sync = Rx.Observable.merge([
+      this.syncSavedAnswers().scan((total, n) => total + n, 0).takeLast(1).doOnNext((count) => {
+        syncedAnswerCount = count;
+      }),
+      this.syncCommittedMcds()
+    ]).ignoreElements().toArray();
+
+    return sync.flatMap(() => {
       if (localOnly) return Rx.Observable.empty<ScheduledStudy>();
       return this.fetchScheduleBatch();
     }).doOnCompleted(() => {
-      this.syncCompleteSubject.onNext(true);
+      this.syncCompleteSubject.onNext(syncedAnswerCount > 0 || !localOnly);
     }).catch(e => {
       this.syncCompleteSubject.onNext(false);
       return Rx.Observable.empty<ScheduledStudy>();
     }).startWith(this.studyStorage.getSchedule());
   }
 
-  connect(requestSync:Rx.Observable<boolean>,
-          loadScheduledStudy:Rx.Observer<ScheduledStudy>,
-          finishSync:Rx.Observer<boolean>,
-          requestUpdateNote:Rx.Observable<[string, number]>) {
+  connect(requestSync: Rx.Observable<boolean>,
+          loadScheduledStudy: Rx.Observer<ScheduledStudy>,
+          finishSync: Rx.Observer<boolean>,
+          requestLoadMcds: Rx.Observable<void>,
+          finishLoadingMcds: Rx.Observer<void>) {
     this.scheduledStudy$.subscribe(loadScheduledStudy);
 
     requestSync.subscribe((localOnly) => this.loadingSubject.onNext(this.sync(localOnly)));
     this.syncCompleteSubject.subscribe(finishSync);
+    requestLoadMcds.subscribe(
+      () => this.syncNewMcds().doOnCompleted(() => finishLoadingMcds.onNext(null)))
   }
 
   complete() {

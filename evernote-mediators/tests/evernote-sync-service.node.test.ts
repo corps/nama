@@ -8,8 +8,7 @@ import * as Rx from "rx";
 import {User} from "../../user-model/user-model";
 import {tap} from "../../utils/obj";
 import {Evernote} from "evernote";
-import { formatCloze } from "../../evernote-mediators/note-contents-mapper";
-import {Cloze} from "../../study-model/note-model";
+import {Cloze, formatCloze} from "../../study-model/note-model";
 import {MockedSyncService} from "./mocked-sync-service";
 
 integrationModule("evernote-sync-service");

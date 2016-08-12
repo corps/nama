@@ -15,20 +15,30 @@ import {ScheduledClozeIdentifier} from "../../api/api-models";
 import {GetLatestNoteResponse} from "../../api/api-models";
 import {LocalSettingsStorage} from "../../local-storage/local-settings-storage";
 import {LocalSettings} from "../../local-storage/local-settings-model";
+import {LocalMcdStorage} from "../../local-storage/local-mcd-storage";
 
-var fetchSchedule:FakeHandler<apiModels.FetchScheduleRequest, apiModels.FetchScheduleResponse>;
-var updateSchedule:FakeHandler<apiModels.UpdateScheduleRequest, apiModels.UpdateScheduleResponse>;
-var getLatest:FakeHandler<apiModels.GetLatestNoteRequest, apiModels.GetLatestNoteResponse>;
-var finishSync:Rx.Subject<boolean>;
+var fetchSchedule: FakeHandler<apiModels.FetchScheduleRequest, apiModels.FetchScheduleResponse>;
+var updateSchedule: FakeHandler<apiModels.UpdateScheduleRequest, apiModels.UpdateScheduleResponse>;
+var putMcds: FakeHandler<apiModels.PutMcdsRequest, apiModels.PutMcdsResponse>;
+var getMcds: FakeHandler<apiModels.GetMcdsRequest, apiModels.GetMcdsResponse>;
+var getLatest: FakeHandler<apiModels.GetLatestNoteRequest, apiModels.GetLatestNoteResponse>;
+var finishSync: Rx.Subject<boolean>;
 var studyStorage = {} as LocalStudyStorage;
-var scheduleUpdates:ScheduleUpdate[];
-var scheduledStudy:ScheduledStudy;
-var loadScheduledStudy:Rx.Subject<ScheduledStudy>;
-var requestSync:Rx.Subject<boolean>;
-var requestNoteUpdate:Rx.Subject<[string, number]>;
-var stubCalls:any[];
+var scheduleUpdates: ScheduleUpdate[];
+var scheduledStudy: ScheduledStudy;
+var loadScheduledStudy: Rx.Subject<ScheduledStudy>;
+var requestSync: Rx.Subject<boolean>;
+var requestNoteUpdate: Rx.Subject<[string, number]>;
+var stubCalls: any[];
 var settingsStorage = {} as LocalSettingsStorage;
-var settings:LocalSettings;
+var settings: LocalSettings;
+var mcdStorage: LocalMcdStorage;
+
+function createSyncService() {
+  var service = new FrontendSyncService(studyStorage, settingsStorage, mcdStorage, putMcds, getMcds, fetchSchedule, updateSchedule, getLatest)
+  service.connect(requestSync, loadScheduledStudy, finishSync, null, null);
+  return service;
+}
 
 QUnit.module("frontend-sync-service", {
   beforeEach: () => {
@@ -74,8 +84,7 @@ function complete() {
 }
 
 QUnit.test("syncing with an empty study update does not make an update request", (assert) => {
-  var service = new FrontendSyncService(studyStorage, settingsStorage, fetchSchedule, updateSchedule, getLatest);
-  service.connect(requestSync, loadScheduledStudy, finishSync, requestNoteUpdate);
+  var service = createSyncService();
 
   assert.expect(2);
 
@@ -103,12 +112,11 @@ QUnit.test(`
   5.  it loads study schedule into the subject.
   6.  Multiple consecutive sync requests will switch and only one load will occur from them.
 `, (assert) => {
-  var service = new FrontendSyncService(studyStorage, settingsStorage, fetchSchedule, updateSchedule, getLatest);
+  var service = createSyncService();
 
   scheduledStudy.scheduledClozes = [null, null, null];
   settings.maxQueueSize = 7;
   settings.studyFilters = ["a", "b"];
-  service.connect(requestSync, loadScheduledStudy, finishSync, requestNoteUpdate);
 
   assert.expect(10);
 
@@ -167,8 +175,7 @@ QUnit.test(`
   2.  update retries up to 3 times
   3.  a failed sync doesn't break the load switch
 `, (assert) => {
-  var service = new FrontendSyncService(studyStorage, settingsStorage, fetchSchedule, updateSchedule, getLatest);
-  service.connect(requestSync, loadScheduledStudy, finishSync, requestNoteUpdate);
+  var service = createSyncService();
 
   assert.expect(4);
 
@@ -214,7 +221,6 @@ QUnit.test(`
     })
   });
 
-
   requestSync.onNext(null);
 });
 
@@ -222,10 +228,9 @@ QUnit.test(`
   does not fetch it the current study queue is sufficient
   but still reloads the current state from the database.
 `, (assert) => {
-  var service = new FrontendSyncService(studyStorage, settingsStorage, fetchSchedule, updateSchedule, getLatest);
+  var service = createSyncService();
   settings.maxQueueSize = 3;
   scheduledStudy.scheduledClozes.push(null, null, null);
-  service.connect(requestSync, loadScheduledStudy, finishSync, requestNoteUpdate);
 
   assert.expect(4);
 
@@ -263,8 +268,7 @@ QUnit.test(`
   stores that result
   issues a load study state when wasUpToDate is false
 `, (assert) => {
-  var service = new FrontendSyncService(studyStorage, settingsStorage, fetchSchedule, updateSchedule, getLatest);
-  service.connect(requestSync, loadScheduledStudy, finishSync, requestNoteUpdate);
+  var service = createSyncService();
 
   assert.expect(7);
 
@@ -309,8 +313,7 @@ QUnit.test(`
   does not issue a load study state when wasUpToDate is true
   does not store anything when wasUpToDate is true;
 `, (assert) => {
-  var service = new FrontendSyncService(studyStorage, settingsStorage, fetchSchedule, updateSchedule, getLatest);
-  service.connect(requestSync, loadScheduledStudy, finishSync, requestNoteUpdate);
+  var service = createSyncService();
 
   assert.expect(6);
 
@@ -349,8 +352,7 @@ QUnit.test(`
 QUnit.test(`
   on consecutive note requests, switches correctly and only issues one load
 `, (assert) => {
-  var service = new FrontendSyncService(studyStorage, settingsStorage, fetchSchedule, updateSchedule, getLatest);
-  service.connect(requestSync, loadScheduledStudy, finishSync, requestNoteUpdate);
+  var service = createSyncService();
 
   assert.expect(4);
 
@@ -392,8 +394,7 @@ QUnit.test(`
 QUnit.test(`
   errors do not break future switches
 `, (assert) => {
-  var service = new FrontendSyncService(studyStorage, settingsStorage, fetchSchedule, updateSchedule, getLatest);
-  service.connect(requestSync, loadScheduledStudy, finishSync, requestNoteUpdate);
+  var service = createSyncService();
 
   assert.expect(4);
 

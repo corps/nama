@@ -16,7 +16,6 @@ import {
   GetMcdsRequest, GetMcdsResponse, PutMcdsRequest,
   PutMcdsResponse
 } from "../../api/api-models";
-import {formatCloze} from "../../evernote-mediators/note-contents-mapper";
 import {PutMcdsService} from "../put-mcds-service";
 import {Note, Term, Cloze} from "../../study-model/note-model";
 

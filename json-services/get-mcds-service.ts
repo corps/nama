@@ -14,30 +14,26 @@ import {Note} from "../study-model/note-model";
 import {deserializeEvernoteThrift} from "../thrift-tools/thrift-tools";
 
 export class GetMcdsService implements ServiceHandler<GetMcdsRequest, GetMcdsResponse, User> {
-  constructor(private evernoteClient:EvernoteClientRx,
-              private schedulerStorage:MasterScheduleStorage,
-              private syncService:EvernoteSyncService,
-              private timeProvider:() => Date) {
+  constructor(private evernoteClient: EvernoteClientRx,
+              private schedulerStorage: MasterScheduleStorage,
+              private syncService: EvernoteSyncService,
+              private timeProvider: () => Date) {
   }
 
   endpoint = GetMcds;
 
-  handle(req:GetMcdsRequest, res:GetMcdsResponse, user$:Rx.Observable<User>) {
-    var userClient:EvernoteClientRx;
+  handle(req: GetMcdsRequest, res: GetMcdsResponse, user$: Rx.Observable<User>) {
+    var userClient: EvernoteClientRx;
     return user$.flatMap(user => {
       return this.syncService.sync(user).ignoreElements().toArray().map(() => user);
     }).flatMap(user => {
       userClient = this.evernoteClient.forUser(user);
 
       return this.schedulerStorage.getRecentContents(user.id, 20, req.ignoreIds);
-    }).doOnNext((contentsRow:NoteContentsRow) => {
+    }).doOnNext((contentsRow: NoteContentsRow) => {
       var evernote = new Evernote.Note();
       deserializeEvernoteThrift(contentsRow.contents, evernote);
-
-      var mapper = new NoteContentsMapper(evernote.content, null, this.timeProvider().getTime());
-      mapper.map();
-      mapper.note.id = evernote.guid;
-      res.notes.push(mapper.note)
+      res.notes.push(mapEvernoteToNote(evernote, this.timeProvider))
     });
   }
 }

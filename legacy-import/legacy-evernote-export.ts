@@ -1,9 +1,8 @@
 import { ImportMaterial } from "./legacy-model";
 import { Evernote } from "evernote";
 import { tap } from "../utils/obj";
-import { formatCloze } from "../evernote-mediators/note-contents-mapper";
 import { User, OauthLogin } from "../user-model/user-model";
-import { Cloze } from "../study-model/note-model";
+import {Cloze, formatCloze} from "../study-model/note-model";
 import moment = require("moment");
 import * as fs from "fs";
 import * as Rx from "rx";

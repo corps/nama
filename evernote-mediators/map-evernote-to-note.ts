@@ -3,10 +3,11 @@ import {Note} from "../study-model/note-model";
 import {NoteContentsMapper} from "./note-contents-mapper";
 import {tap} from "../utils/obj";
 
-export function mapEvernoteToNote(evernote:Evernote.Note) {
-  var contentMapper = new NoteContentsMapper(evernote.content);
+export function mapEvernoteToNote(evernote: Evernote.Note,
+                                  timeProvider: () => Date = () => new Date()) {
+  var contentMapper = new NoteContentsMapper(evernote.content, null, timeProvider().getTime());
   contentMapper.map();
-  return tap(contentMapper.note)((note:Note) => {
+  return tap(contentMapper.note)((note: Note) => {
     note.id = evernote.guid;
     if (evernote.attributes.placeName || evernote.attributes.latitude) {
       note.location =

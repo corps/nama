@@ -233,10 +233,8 @@ export class FrontendAppStateMachine {
 
   requestSync = this.interactions.interaction<boolean>();
 
-  requestUpdateNote = this.subject<[string, number]>();
-
   finishSync = tap(this.subject<boolean>())(subject => {
-    subject.subscribe(() => this.requestSummaryStats.onNext(null));
+    subject.filter((b) => b).subscribe(() => this.requestSummaryStats.onNext(null));
   })
 
   loadStudy = tap(this.subject<ScheduledStudy>())(subject => {
