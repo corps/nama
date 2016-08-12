@@ -1,5 +1,8 @@
 import * as xml from "libxmljs";
-import { Note, Term, Cloze, ClozeIdentifier } from  "../study-model/note-model";
+import {
+  Note, Term, Cloze, ClozeIdentifier, formatCloze,
+  TIME_FORMAT
+} from  "../study-model/note-model";
 import { Schedule } from "../study-model/schedule-model";
 import { XHTMLLineParser } from "../xhtml-line-parser/xthml-line-parser";
 import moment = require('moment');
@@ -151,14 +154,4 @@ export class NoteContentsMapper extends XHTMLLineParser {
     }
   }
 }
-
-export function formatCloze(cloze:Cloze) {
-  return `-- ${cloze.segment} ` +
-    `new ${cloze.schedule.isNew} ` +
-    `due ${moment(cloze.schedule.dueAtMinutes * 60 * 1000).utc().format(TIME_FORMAT)} ` +
-    `interval ${moment.duration(cloze.schedule.intervalMinutes * 60 * 1000).toISOString()} ` +
-    `last ${moment(cloze.schedule.lastAnsweredMinutes * 60 * 1000).utc().format(TIME_FORMAT)}`;
-}
-
-export const TIME_FORMAT = "MM-DD-YYYY HH:mm";
 

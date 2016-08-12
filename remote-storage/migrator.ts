@@ -48,7 +48,9 @@ export class Migrator {
           name: name,
           contents: c
         };
-      }).toArray().doOnNext(s => s.sort((a, b) => a.name < b.name ? -1 : 1)).selectMany(s => s);
+      }).toArray().doOnNext(s => s.sort((a, b) => a.name < b.name ? -1 : 1))
+      .map(s => s.map(e => Rx.Observable.just(e)))
+      .flatMap(s => Rx.Observable.concat(s));
   }
 
   run(migration:Migration):Rx.Observable<Migration> {

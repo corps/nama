@@ -2,6 +2,16 @@ import {tap} from "../utils/obj";
 import {Schedule} from "./schedule-model";
 import {arrayOf, arrayWithSome} from "../model-helpers/model-helpers";
 import {escapeRegex} from "../utils/string";
+import {XmlEntities} from "html-entities";
+import moment = require('moment');
+
+var entities = new XmlEntities();
+
+function encloseInEnml(body:string) {
+  return `<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">
+<en-note style="margin:20px">${body}</en-note>`
+}
 
 const fullStops = [
   "᠃", "᠉", "⳹", "⳾", "⸼", "。", "꓿", "꘎", "꛳", "︒", "﹒", "．", "｡", "𖫵",
@@ -37,6 +47,42 @@ export class Note {
       return [start, start + term.marker.length]
     }
     return [start, start + fullMarker.length];
+  }
+
+  toString() {
+    var contentText = this.text
+      .replace(/\r\n/g, "\n")
+      .split("\n").map(l => l.trim()).join("\n")
+      .replace(/\n\n/g, "\n");
+
+    if (this.terms.length > 0) contentText += "\n\n";
+
+    contentText += this.terms.map((t:Term) => {
+      var lines = [] as string[];
+
+      lines.push("[" + t.marker + "] " + t.original);
+      if (t.hint) lines.push("? " + t.hint.replace(/\n/, " ").trim());
+
+      t.clozes.forEach(cloze => {
+        if (cloze.schedule) {
+          lines.push(formatCloze(cloze));
+        } else {
+          lines.push("-- " + cloze.segment);
+        }
+      });
+
+      lines.push();
+
+      return lines.filter(s => !!s).join("\n")
+    }).join("\n\n");
+
+    return contentText;
+  }
+
+  toEvernoteContent() {
+    return encloseInEnml(entities.encode(this.toString())
+        .replace(/\b/g, "")
+        .replace(/\n/g, "<br/>") + "<br/>");
   }
 
   findTermRegionInReplaced(term:Term):[number, number, string] {
@@ -157,20 +203,12 @@ export class Resource {
   noteId = "";
 }
 
-// trigger resync each 30 minutes, and load
-// trigger resync after empty
+export function formatCloze(cloze:Cloze) {
+  return `-- ${cloze.segment} ` +
+    `new ${cloze.schedule.isNew} ` +
+    `due ${moment(cloze.schedule.dueAtMinutes * 60 * 1000).utc().format(TIME_FORMAT)} ` +
+    `interval ${moment.duration(cloze.schedule.intervalMinutes * 60 * 1000).toISOString()} ` +
+    `last ${moment(cloze.schedule.lastAnsweredMinutes * 60 * 1000).utc().format(TIME_FORMAT)}`;
+}
 
-// stores notes on client side
-// stores series of schedules by version
-// stores written schedules by same version
-
-// first, write up all written schedules.
-// remove corresponding original schedules
-// remove any expired schedules
-// remove any notes no longer used
-
-// request size difference in new cards
-// save
-
-// keep copies in history memory
-// 'inactive' view to help reload state
+export const TIME_FORMAT = "MM-DD-YYYY HH:mm";

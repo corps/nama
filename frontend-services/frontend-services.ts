@@ -69,24 +69,6 @@ export class FrontendServices {
       studyStorage.recordScheduleUpdate(scheduleUpdate);
     });
 
-    // TODO:  This should really be its own service.
-    machine.requestImages.subject.withLatestFrom<FrontendAppState, [string[], FrontendAppState]>(
-      machine.appState$, (imageIds, state) => [imageIds, state]
-    ).subscribe(([imageIds, state]) => {
-      machine.loadImages.onNext(imageIds.map(imageId => {
-        var resource = studyStorage.getResource(imageId);
-        if (resource) {
-          return Rx.Observable.just(resource);
-        }
-
-        var request = new apiModels.GetResourceRequest();
-        request.resourceId = imageId;
-        return getResource.request(request, state.clientSession)
-          .doOnNext(response => studyStorage.storeResourceResponse(response))
-          .map(response => response.compressedResource)
-      }))
-    });
-
     var focusDisposable = focus$.subscribe(() => machine.visitSummary.subject.onNext(null));
     var keyDisposable = key$.subscribe(machine.pressKey.subject);
 

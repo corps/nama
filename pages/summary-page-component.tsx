@@ -85,7 +85,7 @@ export var SummaryPage = component<SummaryPageProps>("Summary",
     var refreshInteraction = interactions.preventDefaultInteraction();
 
     return {
-      view: prop$.map(({appState}) => <div style={backgroundLayer()}>
+        view: prop$.map(({appState}) => <div style={backgroundLayer()}>
           <div>
             <div className="only-desktop" style={{ marginTop: 60 }}>
             </div>

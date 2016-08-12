@@ -1,15 +1,15 @@
-import { User, OauthLogin } from "../user-model/user-model";
-import { OAuthConfig }  from "../web-server/web-server-config";
-import { Evernote } from "evernote";
-import { tap } from "../utils/obj";
+import {User, OauthLogin} from "../user-model/user-model";
+import {OAuthConfig}  from "../web-server/web-server-config";
+import {Evernote} from "evernote";
+import {tap} from "../utils/obj";
 import * as Rx from "rx";
 import * as crypto from "crypto";
 import {IDisposable} from "rx";
 
 export interface EvernoteOauthResult {
-  token: string,
-  secret: string,
-  results: any
+  token:string,
+  secret:string,
+  results:any
 }
 
 interface EvernoteOauthClient {
@@ -107,8 +107,7 @@ class ConcurrencyLimiter implements Rx.IDisposable {
 export class EvernoteClientRx {
   constructor(private oauthConfig?:OAuthConfig,
               private userLogin?:OauthLogin, private isSandbox = true,
-              private concurrencyLimitCache = {} as {[k:string]:ConcurrencyLimiter},
-              private rateLimitCache = {} as {[k:string]:RateLimiter}) {
+              private concurrencyLimitCache = {} as {[k:string]:ConcurrencyLimiter}) {
     var config = {} as Evernote.ClientConfig;
     if (oauthConfig) {
       config.consumerKey = oauthConfig.consumerKey;
@@ -143,16 +142,16 @@ export class EvernoteClientRx {
       var config = new OAuthConfig();
       config.consumerKey = undefined;
       config.consumerSecret = undefined;
-      return new EvernoteClientRx(config, login, false, {}, {});
+      return new EvernoteClientRx(config, login, false, {});
     }
 
     return new EvernoteClientRx(this.oauthConfig, user.getEvernoteLogin(),
-      this.isSandbox, this.concurrencyLimitCache, this.rateLimitCache);
+      this.isSandbox, this.concurrencyLimitCache);
   }
 
   forLogin(userLogin:OauthLogin) {
     return new EvernoteClientRx(this.oauthConfig, userLogin,
-      this.isSandbox, this.concurrencyLimitCache, this.rateLimitCache);
+      this.isSandbox, this.concurrencyLimitCache);
   }
 
   getAccessToken(token:string, secret:string, verifier:string):Rx.Observable<EvernoteOauthResult> {
@@ -319,15 +318,6 @@ export class EvernoteClientRx {
     return this.oauthConfig ? this.oauthConfig.consumerSecret : ""
   }
 
-  private constructRateLimiter() {
-    var secret = this.getSecret();
-    return this.rateLimitCache[secret] = this.rateLimitCache[secret] ||
-      new RateLimiter(() => {
-        this.rateLimitCache[secret].dispose();
-        delete this.rateLimitCache[secret];
-      });
-  }
-
   private constructConcurrencyLimiter() {
     var secret = this.getSecret();
     return this.concurrencyLimitCache[secret] = this.concurrencyLimitCache[secret] ||
@@ -339,7 +329,6 @@ export class EvernoteClientRx {
 
   private wrapWithRetriesAndLimiters<R>(observable:Rx.Observable<R>):Rx.Observable<R> {
     var secret = this.getSecret();
-    var rateLimiter = this.rateLimitCache[secret];
     var retryCatcher = (e:any) => {
       if (e && e.rateLimitDuration != null) {
         return this.wrapWithRetriesAndLimiters(observable);
@@ -352,19 +341,12 @@ export class EvernoteClientRx {
       return concurrencyLimiter.start(observable);
     };
 
-    if (rateLimiter) {
-      return rateLimiter.await().flatMap(concurrencyRunner).catch(retryCatcher);
-    } else {
-      return concurrencyRunner().catch(retryCatcher);
-    }
+    return concurrencyRunner().catch(retryCatcher);
   }
 
   private getCallback<R>(s:Rx.Observer<R>) {
     return (e:any, r:R) => {
       if (e) {
-        if (e.rateLimitDuration) {
-          this.constructRateLimiter().notifyRate(e.rateLimitDuration);
-        }
         console.error(e);
         s.onError(e);
         return;

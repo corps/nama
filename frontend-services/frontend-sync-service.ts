@@ -79,26 +79,6 @@ export class FrontendSyncService {
     }).startWith(this.studyStorage.getSchedule());
   }
 
-  updateNote(noteId:string, noteVersion:number):Rx.Observable<ScheduledStudy> {
-    var session = loadClientSession();
-    var request = new apiModels.GetLatestNoteRequest();
-    request.noteId = noteId;
-    request.noteVersion = noteVersion;
-    return this.getLatestNote.request(request, session)
-      .flatMap((response:apiModels.GetLatestNoteResponse) => {
-        if (response.wasUpToDate) {
-          return Rx.Observable.empty<ScheduledStudy>();
-        }
-        this.studyStorage.storeNoteResponse(response);
-        return Rx.Observable.just(this.studyStorage.getSchedule());
-      }).doOnCompleted(() => {
-        this.syncCompleteSubject.onNext(true);
-      }).catch(e => {
-        this.syncCompleteSubject.onNext(false);
-        return Rx.Observable.just(this.studyStorage.getSchedule());
-      });
-  }
-
   connect(requestSync:Rx.Observable<boolean>,
           loadScheduledStudy:Rx.Observer<ScheduledStudy>,
           finishSync:Rx.Observer<boolean>,
@@ -106,9 +86,6 @@ export class FrontendSyncService {
     this.scheduledStudy$.subscribe(loadScheduledStudy);
 
     requestSync.subscribe((localOnly) => this.loadingSubject.onNext(this.sync(localOnly)));
-    requestUpdateNote.subscribe(([noteId, noteVersion]) => {
-      this.loadingSubject.onNext(this.updateNote(noteId, noteVersion));
-    });
     this.syncCompleteSubject.subscribe(finishSync);
   }
 

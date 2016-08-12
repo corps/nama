@@ -42,6 +42,15 @@ QUnit.test("assignFromJson fails for non objects", (assert) => {
   assert.equal(assignFromJson({}, null), false);
 });
 
+QUnit.test("assignFromJson handles nulling out child objects", (assert) => {
+  var obj = new ParentObj();
+  var src = new ParentObj();
+  src.child = null;
+
+  assert.equal(assignFromJson(obj, JSON.parse(JSON.stringify(src))), true);
+  assert.equal(obj.child, null);
+});
+
 QUnit.test("deserializeByExample handles Dates", (assert) => {
   assert.equal(deserializeByExample(new Date(), "not a date"), invalidObj);
   assert.equal(deserializeByExample(new Date(), {}), invalidObj);

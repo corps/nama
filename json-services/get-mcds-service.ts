@@ -11,11 +11,13 @@ import {EvernoteSyncService} from "../evernote-mediators/evernote-sync-service";
 import {MasterScheduleStorage, NoteContentsRow} from "../remote-storage/master-schedule-storage";
 import {NoteContentsMapper} from "../evernote-mediators/note-contents-mapper";
 import {Note} from "../study-model/note-model";
+import {deserializeEvernoteThrift} from "../thrift-tools/thrift-tools";
 
 export class GetMcdsService implements ServiceHandler<GetMcdsRequest, GetMcdsResponse, User> {
   constructor(private evernoteClient:EvernoteClientRx,
               private schedulerStorage:MasterScheduleStorage,
-              private syncService:EvernoteSyncService) {
+              private syncService:EvernoteSyncService,
+              private timeProvider:() => Date) {
   }
 
   endpoint = GetMcds;
@@ -29,8 +31,12 @@ export class GetMcdsService implements ServiceHandler<GetMcdsRequest, GetMcdsRes
 
       return this.schedulerStorage.getRecentContents(user.id, 20, req.ignoreIds);
     }).doOnNext((contentsRow:NoteContentsRow) => {
-      var mapper = new NoteContentsMapper(contentsRow.contents);
+      var evernote = new Evernote.Note();
+      deserializeEvernoteThrift(contentsRow.contents, evernote);
+
+      var mapper = new NoteContentsMapper(evernote.content, null, this.timeProvider().getTime());
       mapper.map();
+      mapper.note.id = evernote.guid;
       res.notes.push(mapper.note)
     });
   }

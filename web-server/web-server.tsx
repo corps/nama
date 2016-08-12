@@ -1,20 +1,20 @@
 import * as express from "express";
-import { WebServerConfig } from "./web-server-config";
+import {WebServerConfig} from "./web-server-config";
 import * as http from "http";
 import * as Rx from "rx";
 import * as endpoints from "../api/endpoints";
-import { ServerSession, ClientSession } from "./../sessions/session-model";
+import {ServerSession, ClientSession} from "./../sessions/session-model";
 import * as headers from "./header-and-cookie-names";
-import { CookiesAndSessions } from "./cookies-and-sessions";
-import { Logging } from "./logging";
-import { Security } from "./security";
-import { ErrorPages } from "./error-pages";
-import { StaticAssets } from "./static-assets";
-import { JsonServiceContainer } from "./json-service-container";
-import { DatabaseRx } from "../database-rx/database-rx";
-import { UserStorage } from "../remote-storage/user-storage";
-import { Login } from "./login";
-import { EvernoteClientRx } from "../evernote-client-rx/evernote-client-rx";
+import {CookiesAndSessions} from "./cookies-and-sessions";
+import {Logging} from "./logging";
+import {Security} from "./security";
+import {ErrorPages} from "./error-pages";
+import {StaticAssets} from "./static-assets";
+import {JsonServiceContainer} from "./json-service-container";
+import {DatabaseRx} from "../database-rx/database-rx";
+import {UserStorage} from "../remote-storage/user-storage";
+import {Login} from "./login";
+import {EvernoteClientRx} from "../evernote-client-rx/evernote-client-rx";
 import {ServiceHandler} from "./service-handler";
 import {User} from "../user-model/user-model";
 import {UpdateScheduleService} from "../json-services/update-schedule-service";
@@ -24,6 +24,8 @@ import {EvernoteSyncService} from "../evernote-mediators/evernote-sync-service";
 import {GetResourceService} from "../json-services/get-resource-service";
 import {GetLatestNoteService} from "../json-services/get-latest-note-service";
 import {FetchScheduleService} from "../json-services/fetch-schedule-service";
+import {GetMcdsService} from "../json-services/get-mcds-service";
+import {PutMcdsService} from "../json-services/put-mcds-service";
 
 export enum Lifecycle { STARTING, UP, STOPPING, STOPPED }
 
@@ -68,12 +70,16 @@ export class WebServer {
     () => new SummaryStatsService(this.scheduleStorage(), this.evernoteClient(), this.syncService()));
   protected getResourceService = cached(() => new GetResourceService(this.evernoteClient()));
   protected getLatestNoteService = cached(() => new GetLatestNoteService(this.evernoteClient()));
+  protected getMcdsService = cached(
+    () => new GetMcdsService(this.evernoteClient(), this.scheduleStorage(), this.syncService(), this.timeProvider()))
+  protected putMcdsService = cached(() => new PutMcdsService(this.evernoteClient()));
   protected fetchScheduleService = cached(
     () => new FetchScheduleService(this.scheduleStorage(), this.evernoteClient(), this.syncService(), this.timeProvider()));
   protected jsonServiceHandlers = cached<ServiceHandler<any, any, User>[]>(() =>
     [
       this.fetchScheduleService(), this.getLatestNoteService(), this.getResourceService(),
-      this.summaryStatsService(), this.updateScheduleService()
+      this.summaryStatsService(), this.updateScheduleService(), this.getMcdsService(),
+      this.putMcdsService()
     ]);
 
   server:http.Server;

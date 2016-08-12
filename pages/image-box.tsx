@@ -16,8 +16,6 @@ export interface ImageBoxProps {
   style?: CSSProperties
 }
 
-const FINAL_ANIMATION_FRAME = 500; // half a second
-
 export var ImageBox = component<ImageBoxProps>("ImageBox",
   (interactions, prop$, component, lifecycles) => {
     var animationsSubject = interactions.interaction<Rx.Observable<number>>().subject;

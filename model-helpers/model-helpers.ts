@@ -25,7 +25,8 @@ export function assignFromJson(obj:any, json:any) {
 
 export var invalidObj = {};
 export function deserializeByExample(example:any, value:any) {
-  if (example == null || value == null) return invalidObj;
+  if (value == null) return null;
+  if (example == null) return invalidObj;
   if (example instanceof Date) {
     value = new Date(value);
     if (value.toString() === "Invalid Date") return invalidObj;
@@ -57,7 +58,7 @@ export function deserializeByExample(example:any, value:any) {
   return value;
 }
 
-export function arrayOf<T>(ctor:{ new(): T}):T[] {
+export function arrayOf<T>(ctor:{ new():T}):T[] {
   var result = [] as T[];
   (result as any).exampleElement = new ctor();
   return result;
