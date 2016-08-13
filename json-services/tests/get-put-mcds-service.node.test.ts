@@ -80,6 +80,7 @@ QUnit.test(`
 
   var noteOneGuid = "";
   var noteTwoGuid = "";
+  var noteOneVersion = 0;
 
   syncService.findOrCreateStudyBook(testObjects.user).flatMap(([guid, updateSequence]) => {
     testObjects.user.studyBook.guid = guid;
@@ -91,6 +92,7 @@ QUnit.test(`
       note.title = "Test Note";
     })).doOnNext(note => {
       noteOneGuid = note.guid;
+      noteOneVersion = note.updateSequenceNum;
     }).flatMap(() => {
       return userClient.createNote(tap(new Evernote.Note)(note => {
         note.content = encloseInEnml("Content");
@@ -119,6 +121,7 @@ QUnit.test(`
     assert.equal(responseNote.text, "This would\nbe some note contents\n<For reference>.");
     assert.equal(responseNote.id, note.id);
     assert.equal(responseNote.terms.length, 2);
+    assert.ok(responseNote.version > noteOneVersion);
 
     assert.deepEqual(JSON.parse(JSON.stringify(responseNote.terms[0])), {
       "original": "original 1",

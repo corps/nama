@@ -3,4 +3,8 @@ export class SelectTextCell {
   }
 }
 
-export type Action = SelectTextCell;
+export class ReturnToSummary {
+  returnToSummary = true;
+}
+
+export type McdEditorAction = SelectTextCell | ReturnToSummary;

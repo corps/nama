@@ -1,6 +1,9 @@
 import * as Rx from "rx";
 import * as QUnit from "qunitjs";
-import {integrationModule, testObjects} from "../../integration-test-helpers/integration-test-helpers";
+import {
+  integrationModule,
+  testObjects
+} from "../../integration-test-helpers/integration-test-helpers";
 import {EvernoteClientRx} from "../../evernote-client-rx/evernote-client-rx";
 import {Evernote} from "evernote";
 import {ImportMaterial} from "../../legacy-import/legacy-model";
@@ -17,7 +20,6 @@ import {ScheduleUpdate} from "../../api/api-models";
 import {mapEvernoteToNote} from "../../evernote-mediators/map-evernote-to-note";
 
 integrationModule("update-schedule-service");
-
 
 QUnit.test("it works", (assert) => {
   var term = {} as ImportTerm;
@@ -56,74 +58,73 @@ QUnit.test("it works", (assert) => {
       testObjects.user.studyBook.syncVersion = usn;
       return exportToEvernote(importMaterial, evernoteClient, testObjects.user)
     }).flatMap((evernote) => {
-      noteIds.push(evernote.guid);
-      versions.push(evernote.updateSequenceNum);
-      return exportToEvernote(importMaterial, evernoteClient, testObjects.user);
-    })
-    .flatMap((evernote) => {
-      noteIds.push(evernote.guid);
-      versions.push(evernote.updateSequenceNum);
+    noteIds.push(evernote.guid);
+    versions.push(evernote.updateSequenceNum);
+    return exportToEvernote(importMaterial, evernoteClient, testObjects.user);
+  }).flatMap((evernote) => {
+    noteIds.push(evernote.guid);
+    versions.push(evernote.updateSequenceNum);
 
-      if (noteIds[0] > noteIds[1]) {
-        noteIds.reverse();
-        versions.reverse();
-      }
+    if (noteIds[0] > noteIds[1]) {
+      noteIds.reverse();
+      versions.reverse();
+    }
 
-      var update = new ScheduleUpdate();
-      update.schedule.dueAtMinutes = 100;
-      update.schedule.lastAnsweredMinutes = 21;
-      update.scheduledIdentifier.clozeIdentifier.noteId = noteIds[0];
-      update.scheduledIdentifier.clozeIdentifier.termMarker = "marker1";
-      update.scheduledIdentifier.clozeIdentifier.clozeIdx = 0;
-      req.schedules.push(update);
+    var update = new ScheduleUpdate();
+    update.schedule.dueAtMinutes = 100;
+    update.schedule.lastAnsweredMinutes = 21;
+    update.scheduledIdentifier.clozeIdentifier.noteId = noteIds[0];
+    update.scheduledIdentifier.clozeIdentifier.termMarker = "marker1";
+    update.scheduledIdentifier.clozeIdentifier.clozeIdx = 0;
+    req.schedules.push(update);
 
-      update = new ScheduleUpdate();
-      update.schedule.dueAtMinutes = 101;
-      update.schedule.lastAnsweredMinutes = 21;
-      update.scheduledIdentifier.clozeIdentifier.noteId = noteIds[0];
-      update.scheduledIdentifier.clozeIdentifier.termMarker = "marker1";
-      update.scheduledIdentifier.clozeIdentifier.clozeIdx = 1;
-      req.schedules.push(update);
+    update = new ScheduleUpdate();
+    update.schedule.dueAtMinutes = 101;
+    update.schedule.lastAnsweredMinutes = 21;
+    update.scheduledIdentifier.clozeIdentifier.noteId = noteIds[0];
+    update.scheduledIdentifier.clozeIdentifier.termMarker = "marker1";
+    update.scheduledIdentifier.clozeIdentifier.clozeIdx = 1;
+    req.schedules.push(update);
 
-      // Won't get applied, but will be in "completed" result
-      update = new ScheduleUpdate();
-      update.schedule.dueAtMinutes = 102;
-      update.schedule.lastAnsweredMinutes = 21;
-      update.scheduledIdentifier.clozeIdentifier.noteId = noteIds[0];
-      update.scheduledIdentifier.clozeIdentifier.termMarker = "marker1";
-      update.scheduledIdentifier.clozeIdentifier.clozeIdx = 3;
-      req.schedules.push(update);
+    // Won't get applied, but will be in "completed" result
+    update = new ScheduleUpdate();
+    update.schedule.dueAtMinutes = 102;
+    update.schedule.lastAnsweredMinutes = 21;
+    update.scheduledIdentifier.clozeIdentifier.noteId = noteIds[0];
+    update.scheduledIdentifier.clozeIdentifier.termMarker = "marker1";
+    update.scheduledIdentifier.clozeIdentifier.clozeIdx = 3;
+    req.schedules.push(update);
 
-      // Differe note, applies
-      update = new ScheduleUpdate();
-      update.schedule.dueAtMinutes = 103;
-      update.schedule.lastAnsweredMinutes = 21;
-      update.scheduledIdentifier.clozeIdentifier.noteId = noteIds[1];
-      update.scheduledIdentifier.clozeIdentifier.termMarker = "marker1";
-      update.scheduledIdentifier.clozeIdentifier.clozeIdx = 0;
-      req.schedules.push(update);
+    // Differe note, applies
+    update = new ScheduleUpdate();
+    update.schedule.dueAtMinutes = 103;
+    update.schedule.lastAnsweredMinutes = 21;
+    update.scheduledIdentifier.clozeIdentifier.noteId = noteIds[1];
+    update.scheduledIdentifier.clozeIdentifier.termMarker = "marker1";
+    update.scheduledIdentifier.clozeIdentifier.clozeIdx = 0;
+    req.schedules.push(update);
 
-      // Won't get applied, last answered too late
-      update = new ScheduleUpdate();
-      update.schedule.dueAtMinutes = 104;
-      update.schedule.lastAnsweredMinutes = 4;
-      update.scheduledIdentifier.clozeIdentifier.noteId = noteIds[1];
-      update.scheduledIdentifier.clozeIdentifier.termMarker = "marker1";
-      update.scheduledIdentifier.clozeIdentifier.clozeIdx = 1;
-      req.schedules.push(update);
+    // Won't get applied, last answered too late
+    update = new ScheduleUpdate();
+    update.schedule.dueAtMinutes = 104;
+    update.schedule.lastAnsweredMinutes = 4;
+    update.scheduledIdentifier.clozeIdentifier.noteId = noteIds[1];
+    update.scheduledIdentifier.clozeIdentifier.termMarker = "marker1";
+    update.scheduledIdentifier.clozeIdentifier.clozeIdx = 1;
+    req.schedules.push(update);
 
-      // Will error on bad noteId
-      update = new ScheduleUpdate();
-      update.schedule.dueAtMinutes = 106;
-      update.schedule.lastAnsweredMinutes = 21;
-      update.scheduledIdentifier.clozeIdentifier.noteId = "zZNOTREALID";
-      update.scheduledIdentifier.clozeIdentifier.termMarker = "marker1";
-      update.scheduledIdentifier.clozeIdentifier.clozeIdx = 1;
-      req.schedules.push(update);
+    // Will error on bad noteId
+    update = new ScheduleUpdate();
+    update.schedule.dueAtMinutes = 106;
+    update.schedule.lastAnsweredMinutes = 21;
+    update.scheduledIdentifier.clozeIdentifier.noteId = "zZNOTREALID";
+    update.scheduledIdentifier.clozeIdentifier.termMarker = "marker1";
+    update.scheduledIdentifier.clozeIdentifier.clozeIdx = 1;
+    req.schedules.push(update);
 
-      return updateService.handle(req, res, Rx.Observable.just(testObjects.user))
-        .ignoreElements().toArray();
-    }).flatMap(() => {
+    return updateService.handle(req, res, Rx.Observable.just(testObjects.user))
+      .ignoreElements().toArray();
+  }).flatMap(() => {
     res.completed.sort(
       (a, b) => a.clozeIdentifier.toString() < b.clozeIdentifier.toString() ? -1 : 1);
 

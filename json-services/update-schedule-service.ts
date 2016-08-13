@@ -55,20 +55,22 @@ export class UpdateScheduleService implements ServiceHandler<UpdateScheduleReque
           evernote.content = mapper.document.toString();
           evernote.title = mapper.note.terms.map(t => t.original).join(", ");
           evernote.updated = Date.now();
-          return userClient.updateNote(evernote).doOnNext((note:Evernote.Note) => {
-            updatesByNoteId[noteId].forEach(update => {
-              update.scheduledIdentifier.noteVersion = note.updateSequenceNum;
-              res.completed.push(update.scheduledIdentifier);
-            });
-          })
+          return userClient.updateNote(evernote).map(() => null);
         }).catch((e) => {
-          console.error(e);
+          if (e.rateLimitDuration) {
+            return Rx.Observable.throw(e);
+          }
+          return Rx.Observable.just(null);
+        }).doOnNext((note:Evernote.Note) => {
           updatesByNoteId[noteId].forEach(update => {
+            update.scheduledIdentifier.noteVersion += 1;
             res.completed.push(update.scheduledIdentifier);
           });
-          return Rx.Observable.empty();
+        }).catch((e) => {
+          console.error(e);
+          return Rx.Observable.just(null);
         });
-      }));
+      }))
     });
   }
 }

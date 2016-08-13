@@ -12,6 +12,7 @@ import {Resource} from "../study-model/note-model";
 import {Scheduler} from "../study-model/scheduler";
 import {ScheduleUpdate} from "../api/api-models";
 import {ScheduledClozeIdentifier} from "../api/api-models";
+import {McdEditorAction, ReturnToSummary} from "../mcd-editor/mcd-editor-actions";
 
 var transformState:Transformer<FrontendAppState> = transform;
 var transformSettings:Transformer<LocalSettings> = transform;
@@ -83,18 +84,55 @@ export class FrontendAppStateMachine {
     })
   });
 
-  visitSummary = tap(this.interactions.interaction<void>())(interaction => {
+  focusApp = tap(this.interactions.interaction<void>())(interaction => {
+    this.accumulator<void>(interaction.subject, (_, last) => {
+      if (last.currentPage !== CurrentPage.MCDS) {
+        this.visitSummary.subject.onNext(null);
+      }
+
+      return last;
+    });
+  });
+
+  mcdEditorAction = this.interactions.interaction<McdEditorAction>();
+
+  mcdReturnToSummary$ = this.mcdEditorAction.subject
+    .filter((e) => e instanceof ReturnToSummary).map(() => null);
+
+  visitMcds = tap(this.interactions.interaction<void>())(interaction => {
     this.accumulator<any>(interaction.subject, (_, last) => {
       if (last.clientSession.isLoggedIn()) {
         // Local only sync.
         this.requestSync.subject.onNext(true);
+        this.requestSyncMcds.subject.onNext(null);
 
-        if (last.currentPage !== CurrentPage.SUMMARY) {
-          return transformState(last)(next => next.currentPage = CurrentPage.SUMMARY)
+        if (last.currentPage !== CurrentPage.MCDS) {
+          return transformState(last)(next => next.currentPage = CurrentPage.MCDS)
         }
       }
       return last;
     });
+  });
+
+  loadPendingScheduleUpdates = tap(this.interactions.interaction<number>())(interaction => {
+    this.accumulator<number>(interaction.subject, (count, last) => {
+      return transformState(last)(next => next.pendingScheduleUpdates = count);
+    });
+  });
+
+  visitSummary = tap(this.interactions.interaction<void>())(interaction => {
+    this.accumulator<any>(Rx.Observable.merge(interaction.subject, this.mcdReturnToSummary$),
+      (_, last) => {
+        if (last.clientSession.isLoggedIn()) {
+          // Local only sync.
+          this.requestSync.subject.onNext(true);
+
+          if (last.currentPage !== CurrentPage.SUMMARY) {
+            return transformState(last)(next => next.currentPage = CurrentPage.SUMMARY)
+          }
+        }
+        return last;
+      });
   });
 
   beginStudy = tap(this.interactions.interaction<any>())(interaction => {
@@ -233,15 +271,24 @@ export class FrontendAppStateMachine {
 
   requestSync = this.interactions.interaction<boolean>();
 
+  requestSyncMcds = this.interactions.interaction<void>();
+
+  finishLoadingMcds = tap(this.subject<void>())(subject => {
+
+  });
+
   finishSync = tap(this.subject<boolean>())(subject => {
     subject.filter((b) => b).subscribe(() => this.requestSummaryStats.onNext(null));
-  })
+  });
 
   loadStudy = tap(this.subject<ScheduledStudy>())(subject => {
     this.accumulator<ScheduledStudy>(subject, (study, last) => {
       // Don't load in a schedule during study if it would be impossible to perform that study.
       // Visit the summary page and allow a new syncing of state.
-      if (study.scheduledClozes.length == 0 && last.currentPage == CurrentPage.STUDYING) {
+      if ((study.scheduledClozes.length == 0 &&
+        last.currentPage == CurrentPage.STUDYING) ||
+        last.currentPage == CurrentPage.MCDS) {
+
         this.visitSummary.subject.onNext(null);
         return last;
       }

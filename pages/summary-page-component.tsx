@@ -73,6 +73,7 @@ export interface SummaryPageProps {
   onFilterChange?:(v:[string, number])=>void
   onNewFilter?:(v:string)=>void
   onBeginStudying?:(v:any)=>void
+  onVisitMcds?:(e:any) => void
   onRefresh?:(v:any)=>void
 }
 
@@ -83,9 +84,10 @@ export var SummaryPage = component<SummaryPageProps>("Summary",
     var newFilterInteraction = interactions.simpleInputInteraction();
     var beginStudyingInteraction = interactions.preventDefaultInteraction();
     var refreshInteraction = interactions.preventDefaultInteraction();
+    var visitMcdsInteraction = interactions.preventDefaultInteraction();
 
     return {
-        view: prop$.map(({appState}) => <div style={backgroundLayer()}>
+      view: prop$.map(({appState}) => <div style={backgroundLayer()}>
           <div>
             <div className="only-desktop" style={{ marginTop: 60 }}>
             </div>
@@ -114,7 +116,7 @@ export var SummaryPage = component<SummaryPageProps>("Summary",
                       <ScrollworkRosehandle
                         style={tap(simpleInputRosehandle(numeralStyles.fontSize as number))(
                     s => s.marginLeft = css.Pixels.of(-11))}/>
-                    <span style={numeralStyles}>
+                      <span style={numeralStyles}>
                       <input value={appState.localSettings.maxQueueSize + ""}
                              onChange={queueMaxInteraction.listener}
                              style={simpleInput(css.Pixels.of(40))}/>
@@ -135,6 +137,9 @@ export var SummaryPage = component<SummaryPageProps>("Summary",
                   <a onClick={refreshInteraction.listener} href="#">Refresh</a>&nbsp;
                   <span className="only-desktop-inline" style={shortcutKeyStyles}>r</span>
                 </div>
+                <div style={{ marginTop: css.Pixels.of(4) }}>
+                  <a onClick={visitMcdsInteraction.listener} href="#">Mcds</a>&nbsp;
+                </div>
                 <div style={{ marginTop: css.Pixels.of(10), marginBottom: css.Pixels.of(5) }}>
                   <ScrollworkMustache style={{ height: css.Pixels.of(20) }}/>
                 </div>
@@ -143,8 +148,12 @@ export var SummaryPage = component<SummaryPageProps>("Summary",
               studied
                 <br/>
                 Due Today:&nbsp;
-              <span
-                style={numeralStyles}>{appState.summaryStatsLoaded ? appState.summaryStats.dueToday : "?"}</span>
+                <span
+                  style={numeralStyles}>{appState.summaryStatsLoaded ? appState.summaryStats.dueToday : "?"}</span>
+                <br/>
+                Pending:&nbsp;
+                <span
+                  style={numeralStyles}>{appState.pendingScheduleUpdates}</span>
               </div>
             </div>
           </div>
@@ -155,6 +164,7 @@ export var SummaryPage = component<SummaryPageProps>("Summary",
         onFilterChange: modifyFilterInteraction.subject,
         onNewFilter: newFilterInteraction.subject,
         onBeginStudying: beginStudyingInteraction.subject,
+        onVisitMcds: visitMcdsInteraction.subject,
         onRefresh: refreshInteraction.subject.map(() => null)
       }
     }

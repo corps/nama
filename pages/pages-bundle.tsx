@@ -74,6 +74,7 @@ export var PagesTest = component<{}>("PagesTest",
                                      onNewFilter={stateEngine.addFilter.listener}
                                      onFilterChange={stateEngine.changeFilter.listener}
                                      onBeginStudying={stateEngine.beginStudy.listener}
+                                     onVisitMcds={null}
                                      onQueueMaxChange={stateEngine.changeQueueMax.listener}/>;
       var studyPage = <StudyPage appState={appState}
                                  onFinishStudy={null}

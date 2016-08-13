@@ -28,14 +28,14 @@ export class FrontendServices {
     this.visitLogin();
   };
   protected storage = window.localStorage;
-  protected replaceLocation = (s: string) => window.location.replace(s);
+  protected replaceLocation = (s:string) => window.location.replace(s);
   protected requestProvider = () => new XMLHttpRequest();
   protected dateProvider = () => new Date();
 
   constructor() {
   }
 
-  connect(machine: FrontendAppStateMachine) {
+  connect(machine:FrontendAppStateMachine) {
     var localStorage = new LocalStorage(this.storage);
     var settingsStorage = new LocalSettingsStorage(localStorage, () => this.logout());
     var mcdStorage = new LocalMcdStorage(localStorage, settingsStorage);
@@ -63,7 +63,7 @@ export class FrontendServices {
 
     machine.requestSummaryStats
       .withLatestFrom<FrontendAppState, FrontendAppState>(machine.allAppState$,
-        (req: any, state: FrontendAppState) => state)
+        (req:any, state:FrontendAppState) => state)
       .subscribe((state) => {
         machine.loadSummaryStats.onNext(fetchSummaryStats.request(
           tap(new apiModels.SummaryStatsRequest())(r => {
@@ -72,11 +72,15 @@ export class FrontendServices {
           loadClientSession()))
       });
 
-    machine.requestStoreScheduleUpdate.subscribe((scheduleUpdate: ScheduleUpdate) => {
+    machine.requestStoreScheduleUpdate.subscribe((scheduleUpdate:ScheduleUpdate) => {
       studyStorage.recordScheduleUpdate(scheduleUpdate);
     });
 
-    var focusDisposable = focus$.subscribe(() => machine.visitSummary.subject.onNext(null));
+    machine.finishSync.subscribe(() => {
+      machine.loadPendingScheduleUpdates.listener(studyStorage.getScheduleUpdates().length);
+    });
+
+    var focusDisposable = focus$.subscribe(() => machine.focusApp.subject.onNext(null));
     var keyDisposable = key$.subscribe(machine.pressKey.subject);
 
     machine.appState$.ignoreElements().finally(() => {
@@ -84,7 +88,8 @@ export class FrontendServices {
       keyDisposable.dispose();
     }).subscribe();
 
-    syncService.connect(machine.requestSync.subject, machine.loadStudy, machine.finishSync);
+    syncService.connect(machine.requestSync.subject, machine.loadStudy, machine.finishSync,
+      machine.requestSyncMcds.subject, machine.finishLoadingMcds);
     machine.loadClientSession.onNext(loadClientSession());
     settingsStorage.connect(machine.localSetting$, machine.loadLocalSettings);
   }
