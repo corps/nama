@@ -1,16 +1,23 @@
 import {arrayOf} from "../model-helpers/model-helpers";
 import {Note, Term} from "../study-model/note-model";
+import {LocalMcdState} from "../local-storage/local-mcd-storage";
 
-export enum McdEditorView { NOTE_VIEW, TERM_VIEW };
+export class McdEditorNoteState {
+  textWithoutAnnotations = "";
+  ranges = [] as [number, Term][];
+  note = new Note();
+  edited = false;
+}
+
+export class McdEditorTermState {
+  editing = new Term();
+  language = "";
+  speakIt = false;
+}
 
 export class McdEditorState {
-  noteTextWithoutAnnotations = "";
-  markerRanges = [] as [number, number, string];
-  committedNotes = arrayOf(Note);
-  editingNote = new Note();
-  editedNote = false;
-  editableNotes = arrayOf(Note);
-  editingTerm = new Term();
-  editingTermLanguage = "";
-  currentView = McdEditorView.NOTE_VIEW;
+  noteState = new McdEditorNoteState();
+  termState = new McdEditorTermState();
+  loaded = false;
+  editingTerm = false;
 }

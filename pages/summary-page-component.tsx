@@ -151,9 +151,13 @@ export var SummaryPage = component<SummaryPageProps>("Summary",
                 <span
                   style={numeralStyles}>{appState.summaryStatsLoaded ? appState.summaryStats.dueToday : "?"}</span>
                 <br/>
-                Pending:&nbsp;
+                Pending Answers:&nbsp;
                 <span
                   style={numeralStyles}>{appState.pendingScheduleUpdates}</span>
+                <br/>
+                Pending Mcds:&nbsp;
+                <span
+                  style={numeralStyles}>{appState.pendingMcdUpdates}</span>
               </div>
             </div>
           </div>

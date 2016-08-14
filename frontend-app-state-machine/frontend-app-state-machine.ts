@@ -13,9 +13,11 @@ import {Scheduler} from "../study-model/scheduler";
 import {ScheduleUpdate} from "../api/api-models";
 import {ScheduledClozeIdentifier} from "../api/api-models";
 import {McdEditorAction, ReturnToSummary} from "../mcd-editor/mcd-editor-actions";
+import {McdEditorNoteState, McdEditorState} from "../mcd-editor/mcd-editor-state";
 
 var transformState:Transformer<FrontendAppState> = transform;
 var transformSettings:Transformer<LocalSettings> = transform;
+var transformMcd:Transformer<McdEditorState> = transform;
 
 interface Accumulator {
   (last:FrontendAppState):FrontendAppState;
@@ -88,6 +90,8 @@ export class FrontendAppStateMachine {
     this.accumulator<void>(interaction.subject, (_, last) => {
       if (last.currentPage !== CurrentPage.MCDS) {
         this.visitSummary.subject.onNext(null);
+      } else {
+        this.visitMcds.subject.onNext(null);
       }
 
       return last;
@@ -99,12 +103,28 @@ export class FrontendAppStateMachine {
   mcdReturnToSummary$ = this.mcdEditorAction.subject
     .filter((e) => e instanceof ReturnToSummary).map(() => null);
 
+  finishLoadingMcds = tap(this.subject<void>())(subject => {
+
+  });
+
+  loadMcdNote = tap(this.interactions.interaction<Note>())(interaction => {
+    this.accumulator<Note>(interaction.subject, (note, last) => {
+      return transformState(last)(next => {
+        next.mcdEditor = transformMcd(next.mcdEditor)((mcd:McdEditorState) => {
+          mcd.noteState = tap(new McdEditorNoteState())((noteState:McdEditorNoteState) => {
+            noteState.note = note;
+          });
+        })
+      })
+    })
+  });
+
   visitMcds = tap(this.interactions.interaction<void>())(interaction => {
     this.accumulator<any>(interaction.subject, (_, last) => {
       if (last.clientSession.isLoggedIn()) {
         // Local only sync.
         this.requestSync.subject.onNext(true);
-        this.requestSyncMcds.subject.onNext(null);
+        this.requestLoadMcds.subject.onNext(null);
 
         if (last.currentPage !== CurrentPage.MCDS) {
           return transformState(last)(next => next.currentPage = CurrentPage.MCDS)
@@ -117,6 +137,12 @@ export class FrontendAppStateMachine {
   loadPendingScheduleUpdates = tap(this.interactions.interaction<number>())(interaction => {
     this.accumulator<number>(interaction.subject, (count, last) => {
       return transformState(last)(next => next.pendingScheduleUpdates = count);
+    });
+  });
+
+  loadPendingMcdUpdates = tap(this.interactions.interaction<number>())(interaction => {
+    this.accumulator<number>(interaction.subject, (count, last) => {
+      return transformState(last)(next => next.pendingMcdUpdates = count);
     });
   });
 
@@ -271,11 +297,7 @@ export class FrontendAppStateMachine {
 
   requestSync = this.interactions.interaction<boolean>();
 
-  requestSyncMcds = this.interactions.interaction<void>();
-
-  finishLoadingMcds = tap(this.subject<void>())(subject => {
-
-  });
+  requestLoadMcds = this.interactions.interaction<void>();
 
   finishSync = tap(this.subject<boolean>())(subject => {
     subject.filter((b) => b).subscribe(() => this.requestSummaryStats.onNext(null));

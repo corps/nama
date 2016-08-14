@@ -24,4 +24,5 @@ export class FrontendAppState {
   isAnswering = false;
   mcdEditor = new McdEditorState();
   pendingScheduleUpdates = -1;
+  pendingMcdUpdates = -1;
 }

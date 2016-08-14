@@ -5,7 +5,6 @@ import {Note} from "../study-model/note-model";
 
 export class LocalMcdState {
   committed = arrayOf(Note);
-  editing = new Note();
   edited = false;
   queue = arrayOf(Note);
 }

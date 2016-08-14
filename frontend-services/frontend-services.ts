@@ -78,6 +78,7 @@ export class FrontendServices {
 
     machine.finishSync.subscribe(() => {
       machine.loadPendingScheduleUpdates.listener(studyStorage.getScheduleUpdates().length);
+      machine.loadPendingMcdUpdates.listener(mcdStorage.getState().committed.length);
     });
 
     var focusDisposable = focus$.subscribe(() => machine.focusApp.subject.onNext(null));
@@ -89,7 +90,7 @@ export class FrontendServices {
     }).subscribe();
 
     syncService.connect(machine.requestSync.subject, machine.loadStudy, machine.finishSync,
-      machine.requestSyncMcds.subject, machine.finishLoadingMcds);
+      machine.requestLoadMcds.subject, machine.finishLoadingMcds);
     machine.loadClientSession.onNext(loadClientSession());
     settingsStorage.connect(machine.localSetting$, machine.loadLocalSettings);
   }
