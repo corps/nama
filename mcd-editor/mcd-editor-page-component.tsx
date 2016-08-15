@@ -2,7 +2,7 @@ import * as Colors from "../common-styles/colors";
 import * as React from "react";
 import {
   McdEditorAction, ReturnToSummary, CommitTerm,
-  CancelEditingTerm, DeleteTerm, CommitNote, CancelNote
+  CancelEditingTerm, DeleteTerm, CommitNote, CancelNote, SelectTextCell
 } from "./mcd-editor-actions";
 import {McdEditorState} from "./mcd-editor-state";
 import {backgroundLayer} from "../common-styles/layouts";
@@ -16,7 +16,14 @@ export interface McdEditorPageProps {
 }
 
 var characterSpanStyles = tap({} as CSSProperties)((s => {
-
+  s.fontSize = css.Pixels.of(20);
+  s.lineHeight = 1.1;
+  s.display = css.Display.INLINE_BLOCK;
+  s.width = css.Pixels.of(24);
+  s.textAlign = css.TextAlign.CENTER;
+  // s.width = css.Pixels.of(0);
+  // s.paddingLeft = css.Pixels.of(11);
+  // s.paddingRight = css.Pixels.of(11);
 }));
 
 var selectedSpanStyles = tap({} as CSSProperties)((s:CSSProperties) => {
@@ -29,10 +36,11 @@ var selectedSpanStyles = tap({} as CSSProperties)((s:CSSProperties) => {
 var barStyle = tap({} as CSSProperties)((s) => {
   s.position = css.Position.FIXED;
   s.top = css.Pixels.of(0);
+  s.left = css.Pixels.of(0);
+  s.width = css.Percentage.of(100);
   s.paddingBottom = css.Pixels.of(6);
-  s.height = css.Pixels.of(30);
-  s.fontSize = css.Pixels.of(22);
   s.textAlign = css.TextAlign.CENTER;
+  s.backgroundColor = Colors.BG;
 });
 
 var containerStyles = tap({} as CSSProperties)((s) => {
@@ -53,11 +61,13 @@ export class McdEditorPageComponent extends React.Component<McdEditorPageProps, 
   render() {
     return <div style={backgroundLayer()}>
       <div>
-        <div className="only-desktop" style={{ marginTop: 50 }}>
-        </div>
         <div style={containerStyles}>
           <div style={barStyle}>
+            <div className="only-desktop" style={{ marginTop: 50 }}>
+            </div>
             {this.renderBar()}
+          </div>
+          <div className="only-desktop" style={{ marginTop: 50 }}>
           </div>
           {this.renderInner()}
         </div>
@@ -74,7 +84,7 @@ export class McdEditorPageComponent extends React.Component<McdEditorPageProps, 
   }
 
   renderBar() {
-    var returnLink = <a href="#" onClick={this.actionHandler(new ReturnToSummary())}>Return</a>;
+    var returnLink = <a href="#" onClick={this.actionHandler(new ReturnToSummary())}> Return</a>;
 
     if (!this.props.editorState.loaded) {
       return <div>{returnLink}</div>
@@ -82,22 +92,22 @@ export class McdEditorPageComponent extends React.Component<McdEditorPageProps, 
 
     if (this.props.editorState.editingTerm) {
       return <div>
-        <a href="#" onClick={this.actionHandler(new CommitTerm())}>Commit</a>
-        <a href="#" onClick={this.actionHandler(new CancelEditingTerm())}>Cancel</a>
-        <a href="#" onClick={this.actionHandler(new DeleteTerm())}>Delete</a>
+        <a href="#" onClick={this.actionHandler(new CommitTerm())}> Commit</a>
+        <a href="#" onClick={this.actionHandler(new CancelEditingTerm())}> Cancel</a>
+        <a href="#" onClick={this.actionHandler(new DeleteTerm())}> Delete</a>
       </div>
     }
 
     if (this.props.editorState.noteState.edited) {
       return <div>
-        <a href="#" onClick={this.actionHandler(new CommitNote())}>Commit</a>
-        <a href="#" onClick={this.actionHandler(new CancelNote())}>Cancel</a>
+        <a href="#" onClick={this.actionHandler(new CommitNote())}> Commit</a>
+        <a href="#" onClick={this.actionHandler(new CancelNote())}> Cancel</a>
         {returnLink}
       </div>
     }
 
     return <div>
-      <a href="#" onClick={this.actionHandler(new CancelNote())}>Next</a>
+      <a href="#" onClick={this.actionHandler(new CancelNote())}> Next</a>
       {returnLink}
     </div>
   }
@@ -124,22 +134,36 @@ export class McdEditorPageComponent extends React.Component<McdEditorPageProps, 
   renderTextSelector() {
     var spans = [] as React.ReactNode[];
     var noteState = this.props.editorState.noteState;
-    var ranges = noteState.ranges;
+    var termState = this.props.editorState.termState;
+    var regions = noteState.regions;
     var idx = 0;
 
-    for (var i = 0; i < ranges.length; ++i) {
-      var range = ranges[i];
+    for (let i = 0; i < regions.length; ++i) {
+      var region = regions[i];
 
       var characterSpans = [] as React.ReactNode[];
-      for (var j = 0; j < range[0]; ++j) {
-        characterSpans.push(<span
-          style={characterSpanStyles}>{noteState.textWithoutAnnotations[idx++]}</span>)
+      for (let j = 0; j < region[0]; ++j) {
+        var character = noteState.textWithoutAnnotations[idx++];
+        if (character === "\n") {
+          characterSpans.push(<br/>);
+        } else {
+          characterSpans.push(<span key={"" + j}
+                                    onClick={this.actionHandler(new SelectTextCell(i, j))}
+                                    style={characterSpanStyles}>{character}</span>)
+        }
       }
 
-      if (range[1] == null) {
-        spans.push(<span style={selectedSpanStyles}>{characterSpans}</span>);
+      if (region[1] != null) {
+        spans.push(<span key={noteState.note.id + "-" + i}
+                         style={selectedSpanStyles}>{characterSpans}</span>);
       } else {
-        spans.push(<span>{characterSpans}</span>);
+        if (termState.selectedRegion === i) {
+          spans.push(<span>{characterSpans.slice(0, termState.selectedRegionIdx)}</span>);
+          spans.push(<span>{characterSpans[termState.selectedRegionIdx]}</span>);
+          spans.push(<span>{characterSpans.slice(termState.selectedRegionIdx + 1)}</span>);
+        } else {
+          spans.push(<span>{characterSpans}</span>);
+        }
       }
     }
 

@@ -54,7 +54,7 @@ class ConcurrencyLimiter implements Rx.IDisposable {
   private disposable:Rx.IDisposable;
   private numRunning = 0;
   private running = [] as Rx.IDisposable[]
-  private maxConcurrency = 5;
+  private maxConcurrency = 1;
 
   constructor(cb:()=>void) {
     this.disposable = this.finishedSubject.subscribe((r) => {

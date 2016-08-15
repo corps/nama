@@ -5,15 +5,20 @@ import {Interactions} from "../cycle-rx-utils/interactions";
 import {LocalSettings} from "../local-storage/local-settings-model";
 import {FrontendAppState, CurrentPage} from "./frontend-app-state";
 import {SummaryStatsResponse} from "../api/api-models";
-import {ClozeIdentifier, Note} from "../study-model/note-model";
+import {ClozeIdentifier, Note, Term} from "../study-model/note-model";
 import {ClientSession} from "../sessions/session-model";
 import {ScheduledStudy} from "../local-storage/local-study-storage";
 import {Resource} from "../study-model/note-model";
 import {Scheduler} from "../study-model/scheduler";
 import {ScheduleUpdate} from "../api/api-models";
 import {ScheduledClozeIdentifier} from "../api/api-models";
-import {McdEditorAction, ReturnToSummary} from "../mcd-editor/mcd-editor-actions";
-import {McdEditorNoteState, McdEditorState} from "../mcd-editor/mcd-editor-state";
+import {McdEditorAction, ReturnToSummary, SelectTextCell} from "../mcd-editor/mcd-editor-actions";
+import {
+  McdEditorNoteState, McdEditorState,
+  McdEditorTermState
+} from "../mcd-editor/mcd-editor-state";
+import {text} from "body-parser";
+import {LocalMcdState} from "../local-storage/local-mcd-storage";
 
 var transformState:Transformer<FrontendAppState> = transform;
 var transformSettings:Transformer<LocalSettings> = transform;
@@ -100,24 +105,65 @@ export class FrontendAppStateMachine {
 
   mcdEditorAction = this.interactions.interaction<McdEditorAction>();
 
+  selectTextCell$ = this.mcdActionHandler<SelectTextCell>(SelectTextCell,
+    (action:SelectTextCell, last:McdEditorState) => {
+      return last;
+    });
+
   mcdReturnToSummary$ = this.mcdEditorAction.subject
     .filter((e) => e instanceof ReturnToSummary).map(() => null);
 
-  finishLoadingMcds = tap(this.subject<void>())(subject => {
+  finishLoadingMcds = tap(this.interactions.interaction<LocalMcdState>())(interaction => {
+    this.accumulator<LocalMcdState>(interaction.subject,
+      (localMcds:LocalMcdState, last:FrontendAppState) => {
+        return transformState(last)((state:FrontendAppState) => {
+          state.mcdEditor = tap(last.mcdEditor)((mcds:McdEditorState) => {
+            mcds.queue = localMcds.queue;
 
-  });
+            if (mcds.queue.length === 0) {
+              mcds.loaded = false;
+              mcds.noteState = new McdEditorNoteState();
+              return;
+            }
 
-  loadMcdNote = tap(this.interactions.interaction<Note>())(interaction => {
-    this.accumulator<Note>(interaction.subject, (note, last) => {
-      return transformState(last)(next => {
-        next.mcdEditor = transformMcd(next.mcdEditor)((mcd:McdEditorState) => {
-          mcd.noteState = tap(new McdEditorNoteState())((noteState:McdEditorNoteState) => {
-            noteState.note = note;
+            var note = mcds.queue[0];
+
+            mcds.noteState = tap(new McdEditorNoteState())((noteState:McdEditorNoteState) => {
+              noteState.note = note;
+
+              var regions = [[note.text.length, null]] as [number, Term][];
+              var textParts = [note.text] as string[];
+
+              note.terms.forEach((t:Term) => {
+                for (var i = 0; i < regions.length; ++i) {
+                  if (regions[i][1] != null) continue;
+
+                  var [s, e] = note.findTermRegion(t, textParts[i]);
+                  regions.splice(i, 1, [s, null], [t.original.length, t],
+                    [regions[i][0] - e, null]);
+                  textParts.splice(i, 1, textParts[i].slice(0, s), t.original,
+                    textParts[i].slice(e));
+                  break;
+                }
+              });
+
+              noteState.regions = regions;
+              noteState.textWithoutAnnotations = textParts.join("");
+              noteState.edited = localMcds.edited;
+            });
+
+            mcds.loaded = true;
+
+            if (!localMcds.edited) {
+              mcds.editingTerm = false;
+              mcds.termState = new McdEditorTermState();
+            }
           });
         })
-      })
-    })
+      });
   });
+
+  requestWriteEdited = this.subject<void>();
 
   visitMcds = tap(this.interactions.interaction<void>())(interaction => {
     this.accumulator<any>(interaction.subject, (_, last) => {
@@ -407,6 +453,23 @@ export class FrontendAppStateMachine {
 
   private subject<T>() {
     return this.interactions.interaction<T>().subject;
+  }
+
+  private mcdActionHandler<T extends McdEditorAction>(klass:{new(...args:any[]):T},
+                                                      cb:(action:T,
+                                                          last:McdEditorState)=>McdEditorState) {
+    var action$ = this.mcdEditorAction.subject.filter(e => e instanceof klass).map<T>(e => <any>e);
+
+    this.accumulator<T>(action$, (action:T, last:FrontendAppState) => {
+      var next = cb(action, last.mcdEditor);
+      if (next === last.mcdEditor) {
+        return last;
+      }
+
+      return transformState(last)(nextState => nextState.mcdEditor = next);
+    });
+
+    return action$;
   }
 
   complete() {

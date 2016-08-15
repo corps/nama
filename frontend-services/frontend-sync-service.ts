@@ -7,7 +7,7 @@ import {LocalSettingsStorage} from "../local-storage/local-settings-storage";
 import {LocalSettings} from "../local-storage/local-settings-model";
 import {ClientSession} from "../sessions/session-model";
 import {FrontendAppState} from "../frontend-app-state-machine/frontend-app-state";
-import {Resource} from "../study-model/note-model";
+import {Resource, Note} from "../study-model/note-model";
 import {loadClientSession} from "../sessions/fronted-session";
 import {LocalMcdState, LocalMcdStorage} from "../local-storage/local-mcd-storage";
 
@@ -79,8 +79,24 @@ export class FrontendSyncService {
 
     return this.getMcds.request(request, loadClientSession()).doOnNext(response => {
       var state = this.mcdStorage.getState();
-      state.queue = response.notes;
+      if (state.edited) {
+        var seen = {} as {[k:string]:boolean};
+
+        var originalHead = state.queue[0];
+        state.queue = [state.queue[0]].concat(response.notes).filter(function (n) {
+          if (n == null) return false;
+          var result = seen[n.id];
+          seen[n.id] = true;
+          return !!result;
+        });
+
+        state.edited = originalHead === state.queue[0] && state.edited;
+      } else {
+        state.queue = response.notes;
+      }
       this.mcdStorage.writeState(state);
+    }).catch(() => {
+      return Rx.Observable.just(null);
     })
   }
 
@@ -133,13 +149,14 @@ export class FrontendSyncService {
           loadScheduledStudy:Rx.Observer<ScheduledStudy>,
           finishSync:Rx.Observer<boolean>,
           requestLoadMcds:Rx.Observable<void>,
-          finishLoadingMcds:Rx.Observer<void>) {
+          finishLoadingMcds:Rx.Observer<LocalMcdState>) {
     this.scheduledStudy$.subscribe(loadScheduledStudy);
 
     requestSync.subscribe((localOnly) => this.loadingSubject.onNext(this.sync(localOnly)));
     this.syncCompleteSubject.subscribe(finishSync);
     requestLoadMcds.subscribe(
-      () => this.syncNewMcds().doOnCompleted(() => finishLoadingMcds.onNext(null)))
+      () => this.syncNewMcds()
+        .doOnCompleted(() => finishLoadingMcds.onNext(this.mcdStorage.getState())))
   }
 
   complete() {

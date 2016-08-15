@@ -89,8 +89,14 @@ export class FrontendServices {
       keyDisposable.dispose();
     }).subscribe();
 
+    machine.requestWriteEdited.subscribe(() => {
+      var state = mcdStorage.getState();
+      state.edited = true;
+      mcdStorage.writeState(state);
+    });
+
     syncService.connect(machine.requestSync.subject, machine.loadStudy, machine.finishSync,
-      machine.requestLoadMcds.subject, machine.finishLoadingMcds);
+      machine.requestLoadMcds.subject, machine.finishLoadingMcds.subject);
     machine.loadClientSession.onNext(loadClientSession());
     settingsStorage.connect(machine.localSetting$, machine.loadLocalSettings);
   }

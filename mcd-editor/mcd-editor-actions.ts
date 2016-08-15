@@ -1,5 +1,7 @@
 export class SelectTextCell {
-  constructor(public idx:number) {
+  selectTextCell = true;
+
+  constructor(public region:number, public regionIdx:number) {
   }
 }
 
