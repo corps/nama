@@ -1,7 +1,8 @@
+import {Term} from "../study-model/note-model";
 export class SelectTextCell {
   selectTextCell = true;
 
-  constructor(public region:number, public regionIdx:number) {
+  constructor(public region: number, public regionIdx: number) {
   }
 }
 
@@ -29,6 +30,13 @@ export class CancelNote {
   cancelNote = true;
 }
 
-type TermAction =  CommitTerm | CancelEditingTerm | DeleteTerm;
+export class OpenTerm {
+  openTerm = true;
+
+  constructor(public term: Term) {
+  }
+}
+
+type TermAction =  CommitTerm | CancelEditingTerm | DeleteTerm | OpenTerm;
 type NoteAction = CommitNote | CancelNote;
 export type McdEditorAction = SelectTextCell | ReturnToSummary | TermAction | NoteAction;

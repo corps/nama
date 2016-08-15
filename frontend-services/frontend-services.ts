@@ -17,6 +17,7 @@ import {key$} from "./keypresses-rx";
 import {ScheduleUpdate} from "../api/api-models";
 import {PutMcdsResponse} from "../api/api-models";
 import {LocalMcdStorage} from "../local-storage/local-mcd-storage";
+import {Note} from "../study-model/note-model";
 
 export class FrontendServices {
   protected visitLogin = () => {
@@ -28,14 +29,14 @@ export class FrontendServices {
     this.visitLogin();
   };
   protected storage = window.localStorage;
-  protected replaceLocation = (s:string) => window.location.replace(s);
+  protected replaceLocation = (s: string) => window.location.replace(s);
   protected requestProvider = () => new XMLHttpRequest();
   protected dateProvider = () => new Date();
 
   constructor() {
   }
 
-  connect(machine:FrontendAppStateMachine) {
+  connect(machine: FrontendAppStateMachine) {
     var localStorage = new LocalStorage(this.storage);
     var settingsStorage = new LocalSettingsStorage(localStorage, () => this.logout());
     var mcdStorage = new LocalMcdStorage(localStorage, settingsStorage);
@@ -63,7 +64,7 @@ export class FrontendServices {
 
     machine.requestSummaryStats
       .withLatestFrom<FrontendAppState, FrontendAppState>(machine.allAppState$,
-        (req:any, state:FrontendAppState) => state)
+        (req: any, state: FrontendAppState) => state)
       .subscribe((state) => {
         machine.loadSummaryStats.onNext(fetchSummaryStats.request(
           tap(new apiModels.SummaryStatsRequest())(r => {
@@ -72,7 +73,7 @@ export class FrontendServices {
           loadClientSession()))
       });
 
-    machine.requestStoreScheduleUpdate.subscribe((scheduleUpdate:ScheduleUpdate) => {
+    machine.requestStoreScheduleUpdate.subscribe((scheduleUpdate: ScheduleUpdate) => {
       studyStorage.recordScheduleUpdate(scheduleUpdate);
     });
 
@@ -89,10 +90,18 @@ export class FrontendServices {
       keyDisposable.dispose();
     }).subscribe();
 
-    machine.requestWriteEdited.subscribe(() => {
+    machine.writeEdit$.subscribe((note: Note) => {
       var state = mcdStorage.getState();
       state.edited = true;
+      if (state.queue.length === 0 || state.queue[0].id != note.id) {
+        state.queue.splice(0, 0, note);
+      } else {
+        state.queue[0] = note;
+      }
+
       mcdStorage.writeState(state);
+
+      machine.finishLoadingMcds.subject.onNext(state);
     });
 
     syncService.connect(machine.requestSync.subject, machine.loadStudy, machine.finishSync,

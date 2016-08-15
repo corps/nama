@@ -12,7 +12,10 @@ import {Resource} from "../study-model/note-model";
 import {Scheduler} from "../study-model/scheduler";
 import {ScheduleUpdate} from "../api/api-models";
 import {ScheduledClozeIdentifier} from "../api/api-models";
-import {McdEditorAction, ReturnToSummary, SelectTextCell} from "../mcd-editor/mcd-editor-actions";
+import {
+  McdEditorAction, ReturnToSummary, SelectTextCell,
+  OpenTerm
+} from "../mcd-editor/mcd-editor-actions";
 import {
   McdEditorNoteState, McdEditorState,
   McdEditorTermState
@@ -20,16 +23,18 @@ import {
 import {text} from "body-parser";
 import {LocalMcdState} from "../local-storage/local-mcd-storage";
 
-var transformState:Transformer<FrontendAppState> = transform;
-var transformSettings:Transformer<LocalSettings> = transform;
-var transformMcd:Transformer<McdEditorState> = transform;
+var transformState: Transformer<FrontendAppState> = transform;
+var transformSettings: Transformer<LocalSettings> = transform;
+var transformMcd: Transformer<McdEditorState> = transform;
+var transformTerm: Transformer<McdEditorTermState> = transform;
+var transformNote: Transformer<McdEditorNoteState> = transform;
 
 interface Accumulator {
-  (last:FrontendAppState):FrontendAppState;
+  (last: FrontendAppState): FrontendAppState;
 }
 
 interface UnboundAccumulator<T> {
-  (v:T, last:FrontendAppState):FrontendAppState;
+  (v: T, last: FrontendAppState): FrontendAppState;
 }
 
 export const EASY_FACTOR = 4.0;
@@ -43,10 +48,10 @@ export class FrontendAppStateMachine {
   private accumulatorSubject = this.interactions.interaction<Accumulator>().subject;
   localSetting$ = this.localSettingsSinkSubject.asObservable().debounce(1000);
   allAppState$ = this.accumulatorSubject.scan<FrontendAppState>(
-    (lastState:FrontendAppState, acc:Accumulator) => {
+    (lastState: FrontendAppState, acc: Accumulator) => {
       return acc(lastState);
     }, this.initialState).startWith(this.initialState)
-    .distinctUntilChanged((v:any) => v, (a, b) => a === b)
+    .distinctUntilChanged((v: any) => v, (a, b) => a === b)
     .shareReplay(1);
 
   appState$ = this.allAppState$.debounce(0);
@@ -105,9 +110,67 @@ export class FrontendAppStateMachine {
 
   mcdEditorAction = this.interactions.interaction<McdEditorAction>();
 
+  openTerm$ = this.mcdActionHandler<OpenTerm>(OpenTerm,
+    (action: OpenTerm, last: McdEditorState) => {
+      return transformMcd(last)((state: McdEditorState) => {
+        state.termState = tap(new McdEditorTermState())((termState: McdEditorTermState) => {
+          termState.editing = action.term;
+        });
+
+        state.editingTerm = true;
+      });
+    });
+
   selectTextCell$ = this.mcdActionHandler<SelectTextCell>(SelectTextCell,
-    (action:SelectTextCell, last:McdEditorState) => {
-      return last;
+    (action: SelectTextCell, last: McdEditorState) => {
+      var region = last.noteState.regions[action.region];
+      if (region == null) {
+        return transformMcd(last)(state => {
+          state.termState = transformTerm(state.termState)(term => {
+            term.selectedRegion = -1;
+            term.selectedRegionIdx = -1;
+          })
+        })
+      }
+
+      if (region[1]) {
+        this.mcdEditorAction.listener(new OpenTerm(region[1]));
+        return last;
+      }
+
+      if (last.termState.selectedRegion != action.region || last.termState.selectedRegionIdx > action.regionIdx) {
+        return transformMcd(last)(state => {
+          state.termState = transformTerm(state.termState)(term => {
+            term.selectedRegion = action.region;
+            term.selectedRegionIdx = action.regionIdx;
+          });
+        });
+      }
+
+      return transformMcd(last)((state: McdEditorState) => {
+        var idx = 0;
+        for (var i = 0; i < action.region; ++i) idx += last.noteState.regions[i][0];
+
+        var term = new Term();
+        term.original =
+          last.noteState.textWithoutAnnotations.slice(
+            idx + last.termState.selectedRegionIdx,
+            idx + action.regionIdx + 1);
+
+        term.marker = state.noteState.note.findNextUniqueMarker(term.original);
+
+        state.noteState = transformNote(state.noteState)((noteState: McdEditorNoteState) => {
+          noteState.note = transform<Note>(noteState.note)((note: Note) => {
+            note.terms = note.terms.slice();
+            note.terms.push(term);
+          });
+
+          noteState.edited = true;
+        });
+
+        this.requestWriteEdit.onNext(state.noteState.note);
+        this.mcdEditorAction.listener(new OpenTerm(term));
+      });
     });
 
   mcdReturnToSummary$ = this.mcdEditorAction.subject
@@ -115,26 +178,28 @@ export class FrontendAppStateMachine {
 
   finishLoadingMcds = tap(this.interactions.interaction<LocalMcdState>())(interaction => {
     this.accumulator<LocalMcdState>(interaction.subject,
-      (localMcds:LocalMcdState, last:FrontendAppState) => {
-        return transformState(last)((state:FrontendAppState) => {
-          state.mcdEditor = tap(last.mcdEditor)((mcds:McdEditorState) => {
+      (localMcds: LocalMcdState, last: FrontendAppState) => {
+        return transformState(last)((state: FrontendAppState) => {
+          state.mcdEditor = tap(new McdEditorState())((mcds: McdEditorState) => {
             mcds.queue = localMcds.queue;
 
+            if (last.mcdEditor.loaded && last.mcdEditor.noteState.edited) {
+              return;
+            }
+
             if (mcds.queue.length === 0) {
-              mcds.loaded = false;
-              mcds.noteState = new McdEditorNoteState();
               return;
             }
 
             var note = mcds.queue[0];
 
-            mcds.noteState = tap(new McdEditorNoteState())((noteState:McdEditorNoteState) => {
+            mcds.noteState = tap(new McdEditorNoteState())((noteState: McdEditorNoteState) => {
               noteState.note = note;
 
               var regions = [[note.text.length, null]] as [number, Term][];
               var textParts = [note.text] as string[];
 
-              note.terms.forEach((t:Term) => {
+              note.terms.forEach((t: Term) => {
                 for (var i = 0; i < regions.length; ++i) {
                   if (regions[i][1] != null) continue;
 
@@ -153,17 +218,13 @@ export class FrontendAppStateMachine {
             });
 
             mcds.loaded = true;
-
-            if (!localMcds.edited) {
-              mcds.editingTerm = false;
-              mcds.termState = new McdEditorTermState();
-            }
           });
         })
       });
   });
 
-  requestWriteEdited = this.subject<void>();
+  requestWriteEdit = this.subject<Note>();
+  writeEdit$ = this.requestWriteEdit.debounce(1000);
 
   visitMcds = tap(this.interactions.interaction<void>())(interaction => {
     this.accumulator<any>(interaction.subject, (_, last) => {
@@ -331,7 +392,7 @@ export class FrontendAppStateMachine {
   });
 
   loadSummaryStats = tap(this.subject<Rx.Observable<SummaryStatsResponse>>())(subject => {
-    var restartSwitch:()=>Rx.Observable<SummaryStatsResponse> = () => subject.switch()
+    var restartSwitch: ()=>Rx.Observable<SummaryStatsResponse> = () => subject.switch()
       .catch(restartSwitch);
     this.accumulator<SummaryStatsResponse>(restartSwitch(), (stats, last) => {
       return transformState(last)(next => {
@@ -423,15 +484,15 @@ export class FrontendAppStateMachine {
     })
   });
 
-  constructor(private interactions:Interactions,
+  constructor(private interactions: Interactions,
               private initialState = new FrontendAppState()) {
   }
 
-  private accumulator<T>(source:Rx.Observable<T>, acc:UnboundAccumulator<T>) {
-    return source.map(v => (last:FrontendAppState) => {
+  private accumulator<T>(source: Rx.Observable<T>, acc: UnboundAccumulator<T>) {
+    return source.map(v => (last: FrontendAppState) => {
       return acc(v, last);
     })
-      .subscribe((f:(last:FrontendAppState)=>FrontendAppState) => {
+      .subscribe((f: (last: FrontendAppState)=>FrontendAppState) => {
         Rx.Scheduler.currentThread.schedule(null, () => {
           this.accumulatorSubject.onNext(f);
           return null;
@@ -439,8 +500,8 @@ export class FrontendAppStateMachine {
       });
   }
 
-  private sinkSettingsAccumulator<T>(source:Rx.Observable<T>,
-                                     acc:(v:T, settings:LocalSettings)=>LocalSettings) {
+  private sinkSettingsAccumulator<T>(source: Rx.Observable<T>,
+                                     acc: (v: T, settings: LocalSettings)=>LocalSettings) {
     this.accumulator<T>(source, (v, appState) => {
       return transformState(appState)(next => {
         next.localSettings = acc(v, next.localSettings);
@@ -455,12 +516,12 @@ export class FrontendAppStateMachine {
     return this.interactions.interaction<T>().subject;
   }
 
-  private mcdActionHandler<T extends McdEditorAction>(klass:{new(...args:any[]):T},
-                                                      cb:(action:T,
-                                                          last:McdEditorState)=>McdEditorState) {
+  private mcdActionHandler<T extends McdEditorAction>(klass: {new(...args: any[]): T},
+                                                      cb: (action: T,
+                                                           last: McdEditorState)=>McdEditorState) {
     var action$ = this.mcdEditorAction.subject.filter(e => e instanceof klass).map<T>(e => <any>e);
 
-    this.accumulator<T>(action$, (action:T, last:FrontendAppState) => {
+    this.accumulator<T>(action$, (action: T, last: FrontendAppState) => {
       var next = cb(action, last.mcdEditor);
       if (next === last.mcdEditor) {
         return last;
