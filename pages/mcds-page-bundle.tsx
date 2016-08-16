@@ -4,48 +4,35 @@ import * as React from "react";
 import {component} from "../cycle-rx-utils/components";
 import {FrontendAppStateMachine} from "../frontend-app-state-machine/frontend-app-state-machine";
 import {FrontendAppState} from "../frontend-app-state-machine/frontend-app-state";
-import {LocalMcdState} from "../local-storage/local-mcd-storage";
+import {LocalMcdState, LocalMcdStorage} from "../local-storage/local-mcd-storage";
 import {buildShortNote, buildLongNote, buildSpeakNote} from "./demo-notes";
 import {tap} from "../utils/obj";
 import {focus$} from "../frontend-services/pagefocus-rx";
+import {FrontendServices} from "../frontend-services/frontend-services";
+import {LocalStorage} from "../local-storage/local-storage";
+import {LocalSettingsStorage} from "../local-storage/local-settings-storage";
 
 export var McdEditorPageComponentTest = component<{}>("McdEditorPageComponentTest",
   (interactions, prop$) => {
-
-    var localMcds = [
-      tap(new LocalMcdState())((s:LocalMcdState) => {
-        s.queue = [buildShortNote(), buildLongNote()];
-      }),
-      tap(new LocalMcdState())((s:LocalMcdState) => {
-        s.queue = [buildShortNote(), buildLongNote()];
-        s.edited = true;
-      }),
-      tap(new LocalMcdState())((s:LocalMcdState) => {
-        s.queue = [buildLongNote()];
-      }),
-      tap(new LocalMcdState())((s:LocalMcdState) => {
-        s.queue = [buildSpeakNote()];
-      }),
-      tap(new LocalMcdState())((s:LocalMcdState) => {
-        s.queue = [];
-      }),
-    ];
-
     var initialState = new FrontendAppState();
     var stateMachine = new FrontendAppStateMachine(interactions, initialState);
+    var services = new FrontendServices();
 
-    var count = 0;
+    var localStorage = new LocalStorage(window.localStorage);
+    var settingsStorage = new LocalSettingsStorage(localStorage, () => null);
+    var mcdStorage = new LocalMcdStorage(localStorage, settingsStorage);
+    (window as any).mcdStorage = mcdStorage;
+
     stateMachine.requestLoadMcds.subject.subscribe(() => {
-      stateMachine.finishLoadingMcds.listener(localMcds[count % localMcds.length]);
-      count++;
+      var state = mcdStorage.getState();
+      if (state.queue.length == 0) {
+        state.queue = [buildLongNote(), buildSpeakNote()];
+        mcdStorage.writeState(state);
+      }
     });
 
-    focus$.subscribe(() => {
-      console.log("focused");
-      stateMachine.requestLoadMcds.subject.onNext(null);
-    });
-
-    stateMachine.requestLoadMcds.subject.onNext(null);
+    services.connect(stateMachine);
+    stateMachine.visitMcds.listener(null);
 
     return stateMachine.appState$.map((s:FrontendAppState) => {
       console.log("next state", s);

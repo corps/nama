@@ -1,19 +1,34 @@
 import * as Colors from "../common-styles/colors";
 import * as React from "react";
 import {
-  McdEditorAction, ReturnToSummary, CommitTerm,
-  CancelEditingTerm, DeleteTerm, CommitNote, CancelNote, SelectTextCell
+  McdEditorAction,
+  ReturnToSummary,
+  DeleteTerm,
+  CommitNote,
+  CancelNote,
+  SelectTextCell,
+  EditTermHint,
+  EditTermDetails,
+  EditTermClozes,
+  FinishEditingTerm, EditTermLanguage
 } from "./mcd-editor-actions";
 import {McdEditorState} from "./mcd-editor-state";
 import {backgroundLayer} from "../common-styles/layouts";
 import {tap} from "../utils/obj";
 import {CSSProperties} from "../css-properties/css-properties";
 import * as css from "../css-properties/css-properties";
+import {simpleInput} from "../common-styles/inputs";
 
 export interface McdEditorPageProps {
   onAction:(action:McdEditorAction)=>void
   editorState:McdEditorState
 }
+
+var inputStyles = simpleInput(css.Percentage.of(90));
+
+var detailsStyles = tap(simpleInput(css.Percentage.of(90)))((s:CSSProperties) => {
+  s.backgroundColor = Colors.OLD_PEA;
+});
 
 var characterSpanStyles = tap({} as CSSProperties)((s => {
   s.fontSize = css.Pixels.of(20);
@@ -53,10 +68,6 @@ var containerStyles = tap({} as CSSProperties)((s) => {
   s.marginRight = css.AUTO;
 });
 
-// -- Next Return
-// -- Commit Cancel Return
-// -- Commit Cancel Delete
-
 export class McdEditorPageComponent extends React.Component<McdEditorPageProps, {}> {
   render() {
     return <div style={backgroundLayer()}>
@@ -73,6 +84,13 @@ export class McdEditorPageComponent extends React.Component<McdEditorPageProps, 
         </div>
       </div>
     </div>;
+  }
+
+  inputActionHandler<T extends McdEditorAction>(klass:{new(v:string):T}) {
+    return (e:React.SyntheticEvent) => {
+      e.stopPropagation();
+      this.props.onAction(new klass((e.target as any).value));
+    }
   }
 
   actionHandler(action:McdEditorAction) {
@@ -92,8 +110,7 @@ export class McdEditorPageComponent extends React.Component<McdEditorPageProps, 
 
     if (this.props.editorState.editingTerm) {
       return <div>
-        <a href="#" onClick={this.actionHandler(new CommitTerm())}> Commit</a>
-        <a href="#" onClick={this.actionHandler(new CancelEditingTerm())}> Cancel</a>
+        <a href="#" onClick={this.actionHandler(new FinishEditingTerm())}> Finish</a>
         <a href="#" onClick={this.actionHandler(new DeleteTerm())}> Delete</a>
       </div>
     }
@@ -127,8 +144,69 @@ export class McdEditorPageComponent extends React.Component<McdEditorPageProps, 
   }
 
   renderTermEditor() {
-    return <div>
+    var termState = this.props.editorState.termState;
+    return <div style={{ textAlign: css.TextAlign.CENTER }}>
+      <div>
+        Term: {termState.editing.original}
+      </div>
+      <div>
+        Marker: {termState.editing.marker}
+      </div>
+
+      <div>
+        Hint
+        <div>
+          <input type="text" style={inputStyles}
+                 onChange={this.inputActionHandler(EditTermHint)}
+                 value={termState.editing.hint}/>
+        </div>
+      </div>
+
+      <div>
+        Details
+        <div>
+          <textarea
+            rows={3}
+            style={detailsStyles}
+            onChange={this.inputActionHandler(EditTermDetails)}
+            value={termState.editing.details}/>
+        </div>
+      </div>
+
+      <div>
+        Clozes <a href="#" onClick={this.actionHandler(new EditTermClozes(""))}>Clear</a>
+        <div>
+          <input type="text" style={inputStyles}
+                 onChange={this.inputActionHandler(EditTermClozes)}
+                 value={termState.clozes.join(",")}/>
+        </div>
+      </div>
+
+      <div>
+        Language
+        <div>
+          <select onChange={this.inputActionHandler(EditTermLanguage)} style={inputStyles}>
+            <option value="" selected={!termState.language}>Unknown</option>
+            <option value="ja-JP" selected={termState.language === "ja-JP"}>Japanese</option>
+            <option value="zh-HK" selected={termState.language === "zh-HK"}>Cantonese</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        {this.renderDictionaries()}
+      </div>
     </div>;
+  }
+
+  renderDictionaries() {
+    if (this.props.editorState.termState.language === "ja-JP") {
+      return <div>
+        <div>
+          <a href={}></a>
+        </div>
+      </div>
+    }
   }
 
   renderTextSelector() {

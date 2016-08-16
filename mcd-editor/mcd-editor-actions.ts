@@ -2,20 +2,50 @@ import {Term} from "../study-model/note-model";
 export class SelectTextCell {
   selectTextCell = true;
 
-  constructor(public region: number, public regionIdx: number) {
+  constructor(public region:number, public regionIdx:number) {
   }
 }
 
+export class EditTermHint {
+  editTermHint = true;
+
+  constructor(public value:string) {
+  }
+}
+
+export class EditTermClozes {
+  editTermClozes = true;
+
+  constructor(public value:string) {
+  }
+}
+
+export class EditTermLanguage {
+  editTermLanguage = true;
+
+  constructor(public value:string) {
+  }
+}
+
+export class EditTermVoiceUrl {
+  editTermVoiceUrl = true;
+
+  constructor(public value:string) {
+  }
+}
+
+export class EditTermDetails {
+  editTermDetails = true;
+
+  constructor(public value:string) {
+  }
+}
 export class ReturnToSummary {
   returnToSummary = true;
 }
 
-export class CommitTerm {
-  commitTerm = true;
-}
-
-export class CancelEditingTerm {
-  cancelEditingTerm = true;
+export class FinishEditingTerm {
+  finishEditing = true;
 }
 
 export class DeleteTerm {
@@ -33,10 +63,11 @@ export class CancelNote {
 export class OpenTerm {
   openTerm = true;
 
-  constructor(public term: Term) {
+  constructor(public term:Term) {
   }
 }
 
-type TermAction =  CommitTerm | CancelEditingTerm | DeleteTerm | OpenTerm;
-type NoteAction = CommitNote | CancelNote;
+export type TermAction =  FinishEditingTerm | DeleteTerm | OpenTerm | EditTermHint | EditTermLanguage
+  | EditTermDetails | EditTermClozes | EditTermVoiceUrl;
+export type NoteAction = CommitNote | CancelNote;
 export type McdEditorAction = SelectTextCell | ReturnToSummary | TermAction | NoteAction;

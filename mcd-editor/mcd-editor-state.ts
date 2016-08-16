@@ -11,7 +11,9 @@ export class McdEditorNoteState {
 export class McdEditorTermState {
   editing = new Term();
   language = "";
+  voiceUrl = "";
   speakIt = false;
+  clozes = [] as string[];
   selectedRegion = -1;
   selectedRegionIdx = -1;
 }
