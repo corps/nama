@@ -104,6 +104,31 @@ export class FrontendServices {
       machine.finishLoadingMcds.subject.onNext(state);
     });
 
+    machine.requestCancelEdit.subscribe((note: Note) => {
+      var state = mcdStorage.getState();
+      if (state.queue.length != 0 && state.queue[0].id == note.id) {
+        state.edited = false;
+        state.queue.splice(0, 1);
+      }
+
+      mcdStorage.writeState(state);
+      machine.finishLoadingMcds.subject.onNext(state);
+    });
+
+    machine.requestCommitEdit.subscribe((note: Note) => {
+      var state = mcdStorage.getState();
+      if (state.queue.length != 0 && state.queue[0].id == note.id) {
+        state.edited = false;
+        state.queue.splice(0, 1);
+        if (state.committed.map(n => n.id).indexOf(note.id) === -1) {
+          state.committed.push(note);
+        }
+      }
+
+      mcdStorage.writeState(state);
+      machine.finishLoadingMcds.subject.onNext(state);
+    });
+
     syncService.connect(machine.requestSync.subject, machine.loadStudy, machine.finishSync,
       machine.requestLoadMcds.subject, machine.finishLoadingMcds.subject);
     machine.loadClientSession.onNext(loadClientSession());

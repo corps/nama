@@ -10,7 +10,7 @@ import {
   EditTermHint,
   EditTermDetails,
   EditTermClozes,
-  FinishEditingTerm, EditTermLanguage
+  FinishEditingTerm, EditTermLanguage, EditTermVoiceUrl, EditTermFlipSpeak
 } from "./mcd-editor-actions";
 import {McdEditorState} from "./mcd-editor-state";
 import {backgroundLayer} from "../common-styles/layouts";
@@ -20,14 +20,18 @@ import * as css from "../css-properties/css-properties";
 import {simpleInput} from "../common-styles/inputs";
 
 export interface McdEditorPageProps {
-  onAction:(action:McdEditorAction)=>void
-  editorState:McdEditorState
+  onAction: (action: McdEditorAction)=>void
+  editorState: McdEditorState
 }
 
 var inputStyles = simpleInput(css.Percentage.of(90));
 
-var detailsStyles = tap(simpleInput(css.Percentage.of(90)))((s:CSSProperties) => {
+var detailsStyles = tap(simpleInput(css.Percentage.of(90)))((s: CSSProperties) => {
   s.backgroundColor = Colors.OLD_PEA;
+});
+
+var checkboxStyles = tap({} as CSSProperties)((s: CSSProperties) => {
+
 });
 
 var characterSpanStyles = tap({} as CSSProperties)((s => {
@@ -41,7 +45,7 @@ var characterSpanStyles = tap({} as CSSProperties)((s => {
   // s.paddingRight = css.Pixels.of(11);
 }));
 
-var selectedSpanStyles = tap({} as CSSProperties)((s:CSSProperties) => {
+var selectedSpanStyles = tap({} as CSSProperties)((s: CSSProperties) => {
   s.borderRadius = css.Pixels.of(6);
   s.backgroundColor = Colors.YORK_OLD;
   s.boxShadow = new css.BoxShadow(Colors.DEAR_OLD_TEDDY, css.Pixels.of(4), css.Pixels.of(4));
@@ -86,15 +90,15 @@ export class McdEditorPageComponent extends React.Component<McdEditorPageProps, 
     </div>;
   }
 
-  inputActionHandler<T extends McdEditorAction>(klass:{new(v:string):T}) {
-    return (e:React.SyntheticEvent) => {
+  inputActionHandler<T extends McdEditorAction>(klass: {new(v: string): T}) {
+    return (e: React.SyntheticEvent) => {
       e.stopPropagation();
       this.props.onAction(new klass((e.target as any).value));
     }
   }
 
-  actionHandler(action:McdEditorAction) {
-    return (e:React.SyntheticEvent) => {
+  actionHandler(action: McdEditorAction) {
+    return (e: React.SyntheticEvent) => {
       e.preventDefault();
       e.stopPropagation();
       this.props.onAction(action);
@@ -148,8 +152,6 @@ export class McdEditorPageComponent extends React.Component<McdEditorPageProps, 
     return <div style={{ textAlign: css.TextAlign.CENTER }}>
       <div>
         Term: {termState.editing.original}
-      </div>
-      <div>
         Marker: {termState.editing.marker}
       </div>
 
@@ -185,12 +187,16 @@ export class McdEditorPageComponent extends React.Component<McdEditorPageProps, 
       <div>
         Language
         <div>
-          <select onChange={this.inputActionHandler(EditTermLanguage)} style={inputStyles}>
-            <option value="" selected={!termState.language}>Unknown</option>
-            <option value="ja-JP" selected={termState.language === "ja-JP"}>Japanese</option>
-            <option value="zh-HK" selected={termState.language === "zh-HK"}>Cantonese</option>
+          <select value={termState.language || ""}
+                  onChange={this.inputActionHandler(EditTermLanguage)}
+                  style={inputStyles}>
+            <option value="">Unknown</option>
+            <option value="ja-JP">Japanese</option>
+            <option value="zh-HK">Cantonese</option>
           </select>
         </div>
+
+        {this.renderSpeakIt()}
       </div>
 
       <div>
@@ -199,11 +205,35 @@ export class McdEditorPageComponent extends React.Component<McdEditorPageProps, 
     </div>;
   }
 
-  renderDictionaries() {
-    if (this.props.editorState.termState.language === "ja-JP") {
+  renderSpeakIt() {
+    if (this.props.editorState.termState.language) {
       return <div>
         <div>
-          <a href={}></a>
+          Speak It
+          <input type="checkbox" style={checkboxStyles}
+                 onChange={this.actionHandler(new EditTermFlipSpeak())}
+                 checked={this.props.editorState.termState.speakIt}/>
+        </div>
+        <div>
+          <input type="text" style={inputStyles}
+                 onChange={this.inputActionHandler(EditTermVoiceUrl)}
+                 value={this.props.editorState.termState.voiceUrl}/>
+        </div>
+      </div>
+    }
+    return <div></div>;
+  }
+
+  renderDictionaries() {
+    if (this.props.editorState.termState.language === "ja-JP") {
+      var original = this.props.editorState.termState.editing.original;
+      return <div>
+        <div>
+          <a href={"http://jisho.org/search/" + original}>Jisho</a>
+          <a
+            href={`http://www.sanseido.net/User/Dic/Index.aspx?TWords=${original}&st=0&DORDER=&DailyJJ=checkbox&DailyEJ=checkbox&DailyJE=checkbox`}>
+            Sanseido
+          </a>
         </div>
       </div>
     }

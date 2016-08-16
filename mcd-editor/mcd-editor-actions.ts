@@ -67,7 +67,11 @@ export class OpenTerm {
   }
 }
 
+export class EditTermFlipSpeak {
+  editTermFlipSpeak = true;
+}
+
 export type TermAction =  FinishEditingTerm | DeleteTerm | OpenTerm | EditTermHint | EditTermLanguage
-  | EditTermDetails | EditTermClozes | EditTermVoiceUrl;
+  | EditTermDetails | EditTermClozes | EditTermVoiceUrl | EditTermFlipSpeak ;
 export type NoteAction = CommitNote | CancelNote;
 export type McdEditorAction = SelectTextCell | ReturnToSummary | TermAction | NoteAction;
