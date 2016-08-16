@@ -602,10 +602,7 @@ export class FrontendAppStateMachine {
     this.accumulator<ScheduledStudy>(subject, (study, last) => {
       // Don't load in a schedule during study if it would be impossible to perform that study.
       // Visit the summary page and allow a new syncing of state.
-      if ((study.scheduledClozes.length == 0 &&
-        last.currentPage == CurrentPage.STUDYING) ||
-        last.currentPage == CurrentPage.MCDS) {
-
+      if ((study.scheduledClozes.length == 0 && last.currentPage == CurrentPage.STUDYING)) {
         this.visitSummary.subject.onNext(null);
         return last;
       }

@@ -11,15 +11,25 @@ import {focus$} from "../frontend-services/pagefocus-rx";
 import {FrontendServices} from "../frontend-services/frontend-services";
 import {LocalStorage} from "../local-storage/local-storage";
 import {LocalSettingsStorage} from "../local-storage/local-settings-storage";
+import {ClientSession} from "../sessions/session-model";
+import {login} from "../sessions/fronted-session";
 
 export var McdEditorPageComponentTest = component<{}>("McdEditorPageComponentTest",
   (interactions, prop$) => {
     var initialState = new FrontendAppState();
+
+    var clientSession = new ClientSession();
+    clientSession.loggedInUserId = 3;
+    clientSession.sessionXsrfToken = "asdf";
+    login(clientSession);
+
     var stateMachine = new FrontendAppStateMachine(interactions, initialState);
     var services = new FrontendServices();
 
     var localStorage = new LocalStorage(window.localStorage);
     var settingsStorage = new LocalSettingsStorage(localStorage, () => null);
+
+
     var mcdStorage = new LocalMcdStorage(localStorage, settingsStorage);
     (window as any).mcdStorage = mcdStorage;
 
@@ -32,7 +42,10 @@ export var McdEditorPageComponentTest = component<{}>("McdEditorPageComponentTes
     });
 
     services.connect(stateMachine);
-    stateMachine.visitMcds.listener(null);
+
+    setTimeout(() => {
+      stateMachine.visitMcds.listener(null);
+    }, 1000)
 
     return stateMachine.appState$.map((s:FrontendAppState) => {
       console.log("next state", s);
