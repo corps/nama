@@ -7,7 +7,7 @@ import moment = require('moment');
 
 var entities = new XmlEntities();
 
-function encloseInEnml(body: string) {
+function encloseInEnml(body:string) {
   return `<?xml version='1.0' encoding='utf-8'?>
 <!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">
 <en-note style="margin:20px">${body}</en-note>`
@@ -23,11 +23,11 @@ const fullStopRegex = new RegExp(fullStops.map(escapeRegex).join("|") + "|\s\s\s
 const allNotFullStopRegex = new RegExp("[^" + fullStopRegex.source + "]*");
 const allNotFullStopTailRegex = new RegExp(allNotFullStopRegex.source + "$");
 const allNotFullStopHeadRegex = new RegExp("^" + allNotFullStopRegex.source);
-function atleastXUntilSentenceRegexTail(n: number) {
+function atleastXUntilSentenceRegexTail(n:number) {
   return new RegExp("[^" + fullStopRegex.source + "]*.{0," + n + "}$", "g");
 }
 
-function atleastXUntilSentenceRegexHead(n: number) {
+function atleastXUntilSentenceRegexHead(n:number) {
   return new RegExp("^.{0," + n + "}[^" + fullStopRegex.source + "]*");
 }
 
@@ -39,18 +39,23 @@ export class Note {
   terms = arrayOf(Term);
   version = 0;
 
-  findTermRegion(term: Term, text: string) {
+  findTermRegion(term:Term, text:string) {
     var fullMarker = term.original + "[" + term.marker + "]";
     var start = text.indexOf(fullMarker);
     if (start === -1) {
-      start = text.indexOf(term.marker);
-      return [start, start + term.marker.length]
+      if (term.marker.indexOf(term.original) === 0) {
+        start = text.indexOf(term.marker);
+
+        if (start == -1) return [-1, -1];
+        return [start, start + term.marker.length]
+      }
+      return [-1, -1];
     }
     return [start, start + fullMarker.length];
   }
 
-  findNextUniqueMarker(original: string) {
-    var markers = {} as {[k: string]: boolean};
+  findNextUniqueMarker(original:string) {
+    var markers = {} as {[k:string]:boolean};
     this.terms.forEach(t => markers[t.marker] = true);
 
     for (var i = 1; ; ++i) {
@@ -71,7 +76,7 @@ export class Note {
 
     if (this.terms.length > 0) contentText += "\n\n";
 
-    contentText += this.terms.map((t: Term) => {
+    contentText += this.terms.map((t:Term) => {
       var lines = [] as string[];
 
       lines.push("[" + t.marker + "] " + t.original);
@@ -99,7 +104,7 @@ export class Note {
         .replace(/\n/g, "<br/>") + "<br/>");
   }
 
-  findTermRegionInReplaced(term: Term): [number, number, string] {
+  findTermRegionInReplaced(term:Term):[number, number, string] {
     var text = this.text;
     for (var i = 0; i < this.terms.length; ++i) {
       if (this.terms[i].marker === term.marker) continue;
@@ -112,7 +117,7 @@ export class Note {
     return [s, e, text];
   }
 
-  termContext(term: Term, grabCharsMax = 60): [string, string, string] {
+  termContext(term:Term, grabCharsMax = 60):[string, string, string] {
     var [termStart, termEnd, text] = this.findTermRegionInReplaced(term);
     var leftSide = text.slice(0, termStart);
     var partialLeftSide = leftSide.slice(-grabCharsMax);
@@ -127,7 +132,7 @@ export class Note {
       rightSide.replace(/\s*$/, "")];
   }
 
-  clozeParts(term: Term, cloze: Cloze): [string, string, string] {
+  clozeParts(term:Term, cloze:Cloze):[string, string, string] {
     var left = "";
     var idx = 0;
     for (var i = 0; i < term.clozes.length; ++i) {
@@ -147,7 +152,7 @@ export class Note {
     return [left, "", ""];
   }
 
-  findTerm(clozeIdentifier: ClozeIdentifier) {
+  findTerm(clozeIdentifier:ClozeIdentifier) {
     if (clozeIdentifier.noteId != this.id) return null;
     for (var term of this.terms) {
       if (term.marker == clozeIdentifier.termMarker) {
@@ -156,7 +161,7 @@ export class Note {
     }
   }
 
-  findCloze(clozeIdentifier: ClozeIdentifier) {
+  findCloze(clozeIdentifier:ClozeIdentifier) {
     var term = this.findTerm(clozeIdentifier);
     if (term == null) return null;
     return term.clozes[clozeIdentifier.clozeIdx];
@@ -182,7 +187,7 @@ export class ClozeIdentifier {
   termMarker = "";
   clozeIdx = 0;
 
-  static of(note: Note, term: Term, cloze: Cloze) {
+  static of(note:Note, term:Term, cloze:Cloze) {
     var result = new ClozeIdentifier();
     result.noteId = note.id;
     result.termMarker = term.marker;
@@ -190,7 +195,7 @@ export class ClozeIdentifier {
     return result;
   }
 
-  static fromString(ident: string) {
+  static fromString(ident:string) {
     var result = new ClozeIdentifier();
     var parts = ident.split(";");
     result.noteId = parts[0];
@@ -203,7 +208,7 @@ export class ClozeIdentifier {
     return `${this.noteId.toString()};${this.termMarker.toString()};${this.clozeIdx.toString()}`;
   }
 
-  static noteIdentifierOf(ident: string) {
+  static noteIdentifierOf(ident:string) {
     return ident.slice(0, ident.indexOf(';'));
   }
 }
@@ -217,7 +222,7 @@ export class Resource {
   noteId = "";
 }
 
-export function formatCloze(cloze: Cloze) {
+export function formatCloze(cloze:Cloze) {
   return `-- ${cloze.segment} ` +
     `new ${cloze.schedule.isNew} ` +
     `due ${moment(cloze.schedule.dueAtMinutes * 60 * 1000).utc().format(TIME_FORMAT)} ` +

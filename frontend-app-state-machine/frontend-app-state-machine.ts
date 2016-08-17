@@ -24,18 +24,18 @@ import {
 import {text} from "body-parser";
 import {LocalMcdState} from "../local-storage/local-mcd-storage";
 
-var transformState: Transformer<FrontendAppState> = transform;
-var transformSettings: Transformer<LocalSettings> = transform;
-var transformMcd: Transformer<McdEditorState> = transform;
-var transformTerm: Transformer<McdEditorTermState> = transform;
-var transformNote: Transformer<McdEditorNoteState> = transform;
+var transformState:Transformer<FrontendAppState> = transform;
+var transformSettings:Transformer<LocalSettings> = transform;
+var transformMcd:Transformer<McdEditorState> = transform;
+var transformTerm:Transformer<McdEditorTermState> = transform;
+var transformNote:Transformer<McdEditorNoteState> = transform;
 
 interface Accumulator {
-  (last: FrontendAppState): FrontendAppState;
+  (last:FrontendAppState):FrontendAppState;
 }
 
 interface UnboundAccumulator<T> {
-  (v: T, last: FrontendAppState): FrontendAppState;
+  (v:T, last:FrontendAppState):FrontendAppState;
 }
 
 export const EASY_FACTOR = 4.0;
@@ -49,10 +49,10 @@ export class FrontendAppStateMachine {
   private accumulatorSubject = this.interactions.interaction<Accumulator>().subject;
   localSetting$ = this.localSettingsSinkSubject.asObservable().debounce(1000);
   allAppState$ = this.accumulatorSubject.scan<FrontendAppState>(
-    (lastState: FrontendAppState, acc: Accumulator) => {
+    (lastState:FrontendAppState, acc:Accumulator) => {
       return acc(lastState);
     }, this.initialState).startWith(this.initialState)
-    .distinctUntilChanged((v: any) => v, (a, b) => a === b)
+    .distinctUntilChanged((v:any) => v, (a, b) => a === b)
     .shareReplay(1);
 
   appState$ = this.allAppState$.debounce(0);
@@ -112,9 +112,9 @@ export class FrontendAppStateMachine {
   mcdEditorAction = this.interactions.interaction<McdEditorAction>();
 
   openTerm$ = this.mcdActionHandler<OpenTerm>(OpenTerm,
-    (action: OpenTerm, last: McdEditorState) => {
-      return transformMcd(last)((state: McdEditorState) => {
-        state.termState = tap(new McdEditorTermState())((termState: McdEditorTermState) => {
+    (action:OpenTerm, last:McdEditorState) => {
+      return transformMcd(last)((state:McdEditorState) => {
+        state.termState = tap(new McdEditorTermState())((termState:McdEditorTermState) => {
           termState.editing = action.term;
           var segments = action.term.clozes.map(c => c.segment);
 
@@ -134,25 +134,33 @@ export class FrontendAppStateMachine {
     });
 
   finishEditing$ = this.mcdActionHandler<FinishEditingTerm>(FinishEditingTerm,
-    (action: FinishEditingTerm, last: McdEditorState) => {
-      return transformMcd(last)((next: McdEditorState) => {
+    (action:FinishEditingTerm, last:McdEditorState) => {
+      return transformMcd(last)((next:McdEditorState) => {
         next.editingTerm = false;
         next.termState = new McdEditorTermState();
+        this.requestWriteEdit.onNext(next.noteState.note);
       })
     });
 
   deleteTerm$ = this.mcdActionHandler<DeleteTerm>(DeleteTerm,
-    (action: DeleteTerm, last: McdEditorState) => {
-      return transformMcd(last)((next: McdEditorState) => {
+    (action:DeleteTerm, last:McdEditorState) => {
+      return transformMcd(last)((next:McdEditorState) => {
         next.noteState = shallowCopy(next.noteState);
-        next.noteState.note = shallowCopy(next.noteState.note);
-        var terms = next.noteState.note.terms.slice();
+        var note = next.noteState.note = shallowCopy<Note>(next.noteState.note);
+        var terms = note.terms.slice();
 
         for (var i = 0; i < terms.length; ++i) {
           if (terms[i].marker === last.termState.editing.marker &&
             terms[i].original === last.termState.editing.original) {
+            var [s, e] = note.findTermRegion(terms[i], note.text);
+
+            if (s != -1) {
+              note.text = note.text.slice(0, s) + terms[i].original + note.text.slice(e);
+            }
+
             terms.splice(i, 1);
-            next.noteState.note.terms = terms;
+            note.terms = terms;
+            break;
           }
         }
 
@@ -161,19 +169,19 @@ export class FrontendAppStateMachine {
     });
 
   editTermHint$ = this.mcdTermActionHandler<EditTermHint>(EditTermHint,
-    (action: EditTermHint, newState: McdEditorTermState) => {
+    (action:EditTermHint, newState:McdEditorTermState) => {
       newState.editing = shallowCopy(newState.editing);
       newState.editing.hint = action.value.replace(/\n/g, "");
     });
 
   editTermDetail$ = this.mcdTermActionHandler<EditTermDetails>(EditTermDetails,
-    (action: EditTermDetails, newState: McdEditorTermState) => {
+    (action:EditTermDetails, newState:McdEditorTermState) => {
       newState.editing = shallowCopy(newState.editing);
       newState.editing.details = action.value.replace(/\r\n/g, "\n").replace(/\n\n/g, "\n");
     });
 
   editTermCloze$ = this.mcdTermActionHandler<EditTermClozes>(EditTermClozes,
-    (action: EditTermClozes, newState: McdEditorTermState) => {
+    (action:EditTermClozes, newState:McdEditorTermState) => {
       newState.clozes = action.value.split(",").map(s => s.replace(/\s/g, ""));
       newState.editing = shallowCopy(newState.editing);
       var clozes = newState.editing.clozes = newState.editing.clozes.slice();
@@ -211,7 +219,7 @@ export class FrontendAppStateMachine {
     });
 
   editTermLanguage$ = this.mcdTermActionHandler<EditTermLanguage>(EditTermLanguage,
-    (action: EditTermLanguage, newState: McdEditorTermState) => {
+    (action:EditTermLanguage, newState:McdEditorTermState) => {
       var language = action.value;
 
       newState.language = language;
@@ -234,7 +242,7 @@ export class FrontendAppStateMachine {
     });
 
   flipSpeak$ = this.mcdTermActionHandler<EditTermFlipSpeak>(EditTermFlipSpeak,
-    (action: EditTermFlipSpeak, newState: McdEditorTermState) => {
+    (action:EditTermFlipSpeak, newState:McdEditorTermState) => {
       var speakId = newState.speakIt = !newState.speakIt;
       var language = newState.language;
       var voiceUrl = newState.voiceUrl;
@@ -256,7 +264,7 @@ export class FrontendAppStateMachine {
     });
 
   cancelNote$ = this.mcdActionHandler<CancelNote>(CancelNote,
-    (action: CancelNote, last: McdEditorState) => {
+    (action:CancelNote, last:McdEditorState) => {
       var nextState = shallowCopy(last);
       nextState.noteState.edited = false;
       this.requestCancelEdit.onNext(last.noteState.note);
@@ -264,7 +272,7 @@ export class FrontendAppStateMachine {
     });
 
   commitNote$ = this.mcdActionHandler<CancelNote>(CancelNote,
-    (action: CancelNote, last: McdEditorState) => {
+    (action:CancelNote, last:McdEditorState) => {
       var nextState = shallowCopy(last);
       nextState.noteState.edited = false;
       this.requestCommitEdit.onNext(last.noteState.note);
@@ -272,7 +280,7 @@ export class FrontendAppStateMachine {
     });
 
   editTermVoiceUrl$ = this.mcdTermActionHandler<EditTermVoiceUrl>(EditTermVoiceUrl,
-    (action: EditTermVoiceUrl, newState: McdEditorTermState) => {
+    (action:EditTermVoiceUrl, newState:McdEditorTermState) => {
       var voiceUrl = action.value.replace(/\s/g, "");
       newState.voiceUrl = voiceUrl;
 
@@ -295,7 +303,7 @@ export class FrontendAppStateMachine {
     });
 
   selectTextCell$ = this.mcdActionHandler<SelectTextCell>(SelectTextCell,
-    (action: SelectTextCell, last: McdEditorState) => {
+    (action:SelectTextCell, last:McdEditorState) => {
       var region = last.noteState.regions[action.region];
       if (region == null) {
         return transformMcd(last)(state => {
@@ -320,15 +328,23 @@ export class FrontendAppStateMachine {
         });
       }
 
-      return transformMcd(last)((state: McdEditorState) => {
+      return transformMcd(last)((state:McdEditorState) => {
         var unannotatedIdx = 0;
         var annotatedIdx = 0;
+
         for (var i = 0; i < action.region; ++i) {
           var region = last.noteState.regions[i];
           unannotatedIdx += region[0];
-          annotatedIdx = region[0];
-          if (region[1] != null) {
-            unannotatedIdx += region[1].marker.length + 2;
+          if (region[1] == null) {
+            annotatedIdx += region[0];
+          } else {
+            var markerLength = region[1].marker.length;
+            var originalLength = region[1].original.length;
+            if (markerLength > originalLength) {
+              annotatedIdx += markerLength
+            } else {
+              annotatedIdx += originalLength + 2 + markerLength;
+            }
           }
         }
 
@@ -342,12 +358,19 @@ export class FrontendAppStateMachine {
         term.clozes.push(new Cloze());
         term.clozes[0].segment = term.original;
 
-        state.noteState = transformNote(state.noteState)((noteState: McdEditorNoteState) => {
-          noteState.note = transform<Note>(noteState.note)((note: Note) => {
+        state.noteState = transformNote(state.noteState)((noteState:McdEditorNoteState) => {
+          var selectedRegionIdx = last.termState.selectedRegionIdx;
+
+          noteState.note = transform<Note>(noteState.note)((note:Note) => {
             note.terms = note.terms.slice();
             note.terms.push(term);
-            note.text = note.text.slice(0, annotatedIdx) + term.marker + note.text.slice(
-                annotatedIdx + term.marker.length + term.original.length);
+
+            var left = annotatedIdx + selectedRegionIdx;
+            var right = left + term.original.length;
+            var precedingTerm = note.text.slice(0, left);
+            var termReplacement = term.original + "[" + term.marker + "]";
+            var afterTerm = note.text.slice(right);
+            note.text = precedingTerm + termReplacement + afterTerm;
           });
 
           noteState.edited = true;
@@ -363,37 +386,41 @@ export class FrontendAppStateMachine {
 
   finishLoadingMcds = tap(this.interactions.interaction<LocalMcdState>())(interaction => {
     this.accumulator<LocalMcdState>(interaction.subject,
-      (localMcds: LocalMcdState, last: FrontendAppState) => {
-        return transformState(last)((state: FrontendAppState) => {
-          state.mcdEditor = tap(new McdEditorState())((mcds: McdEditorState) => {
+      (localMcds:LocalMcdState, last:FrontendAppState) => {
+        return transformState(last)((state:FrontendAppState) => {
+          if (last.mcdEditor.loaded && last.mcdEditor.editingTerm) {
+            state.mcdEditor = transformMcd(last.mcdEditor)(s => s.queue = localMcds.queue);
+            return;
+          }
+
+          if (localMcds.queue.length === 0) {
+            state.mcdEditor = new McdEditorState();
+            return;
+          }
+
+          state.mcdEditor = tap(new McdEditorState())((mcds:McdEditorState) => {
             mcds.queue = localMcds.queue;
-
-            if (last.mcdEditor.loaded && last.mcdEditor.noteState.edited) {
-              return;
-            }
-
-            if (mcds.queue.length === 0) {
-              return;
-            }
 
             var note = mcds.queue[0];
 
-            mcds.noteState = tap(new McdEditorNoteState())((noteState: McdEditorNoteState) => {
+            mcds.noteState = tap(new McdEditorNoteState())((noteState:McdEditorNoteState) => {
               noteState.note = note;
 
               var regions = [[note.text.length, null]] as [number, Term][];
               var textParts = [note.text] as string[];
 
-              note.terms.forEach((t: Term) => {
+              note.terms.forEach((t:Term) => {
                 for (var i = 0; i < regions.length; ++i) {
                   if (regions[i][1] != null) continue;
 
                   var [s, e] = note.findTermRegion(t, textParts[i]);
-                  regions.splice(i, 1, [s, null], [t.original.length, t],
-                    [regions[i][0] - e, null]);
-                  textParts.splice(i, 1, textParts[i].slice(0, s), t.original,
-                    textParts[i].slice(e));
-                  break;
+                  if (s != -1) {
+                    regions.splice(i, 1, [s, null], [t.original.length, t],
+                      [regions[i][0] - e, null]);
+                    textParts.splice(i, 1, textParts[i].slice(0, s), t.original,
+                      textParts[i].slice(e));
+                    break;
+                  }
                 }
               });
 
@@ -580,7 +607,7 @@ export class FrontendAppStateMachine {
   });
 
   loadSummaryStats = tap(this.subject<Rx.Observable<SummaryStatsResponse>>())(subject => {
-    var restartSwitch: ()=>Rx.Observable<SummaryStatsResponse> = () => subject.switch()
+    var restartSwitch:()=>Rx.Observable<SummaryStatsResponse> = () => subject.switch()
       .catch(restartSwitch);
     this.accumulator<SummaryStatsResponse>(restartSwitch(), (stats, last) => {
       return transformState(last)(next => {
@@ -669,15 +696,15 @@ export class FrontendAppStateMachine {
     })
   });
 
-  constructor(private interactions: Interactions,
+  constructor(private interactions:Interactions,
               private initialState = new FrontendAppState()) {
   }
 
-  private accumulator<T>(source: Rx.Observable<T>, acc: UnboundAccumulator<T>) {
-    return source.map(v => (last: FrontendAppState) => {
+  private accumulator<T>(source:Rx.Observable<T>, acc:UnboundAccumulator<T>) {
+    return source.map(v => (last:FrontendAppState) => {
       return acc(v, last);
     })
-      .subscribe((f: (last: FrontendAppState)=>FrontendAppState) => {
+      .subscribe((f:(last:FrontendAppState)=>FrontendAppState) => {
         Rx.Scheduler.currentThread.schedule(null, () => {
           this.accumulatorSubject.onNext(f);
           return null;
@@ -685,8 +712,8 @@ export class FrontendAppStateMachine {
       });
   }
 
-  private sinkSettingsAccumulator<T>(source: Rx.Observable<T>,
-                                     acc: (v: T, settings: LocalSettings)=>LocalSettings) {
+  private sinkSettingsAccumulator<T>(source:Rx.Observable<T>,
+                                     acc:(v:T, settings:LocalSettings)=>LocalSettings) {
     this.accumulator<T>(source, (v, appState) => {
       return transformState(appState)(next => {
         next.localSettings = acc(v, next.localSettings);
@@ -701,12 +728,12 @@ export class FrontendAppStateMachine {
     return this.interactions.interaction<T>().subject;
   }
 
-  private mcdActionHandler<T extends McdEditorAction>(klass: {new(...args: any[]): T},
-                                                      cb: (action: T,
-                                                           last: McdEditorState)=>McdEditorState) {
+  private mcdActionHandler<T extends McdEditorAction>(klass:{new(...args:any[]):T},
+                                                      cb:(action:T,
+                                                          last:McdEditorState)=>McdEditorState) {
     var action$ = this.mcdEditorAction.subject.filter(e => e instanceof klass).map<T>(e => <any>e);
 
-    this.accumulator<T>(action$, (action: T, last: FrontendAppState) => {
+    this.accumulator<T>(action$, (action:T, last:FrontendAppState) => {
       var next = cb(action, last.mcdEditor);
       if (next === last.mcdEditor) {
         return last;
@@ -718,15 +745,15 @@ export class FrontendAppStateMachine {
     return action$;
   }
 
-  private mcdTermActionHandler<T extends TermAction>(klass: {new(...args: any[]): T},
-                                                     cb: (action: T,
-                                                          newState: McdEditorTermState)=>void) {
+  private mcdTermActionHandler<T extends TermAction>(klass:{new(...args:any[]):T},
+                                                     cb:(action:T,
+                                                         newState:McdEditorTermState)=>void) {
     this.mcdActionHandler(klass, (action, last) => {
-      return transformMcd(last)((mcd: McdEditorState) => {
+      return transformMcd(last)((mcd:McdEditorState) => {
         mcd.termState = transformTerm(mcd.termState)(n => cb(action, n));
 
         var editedTerm = mcd.termState.editing;
-        mcd.noteState = transformNote(mcd.noteState)((noteState: McdEditorNoteState) => {
+        mcd.noteState = transformNote(mcd.noteState)((noteState:McdEditorNoteState) => {
           noteState.note = shallowCopy(noteState.note);
           var terms = noteState.note.terms.slice();
 

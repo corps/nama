@@ -48,7 +48,7 @@ export var McdEditorPageComponentTest = component<{}>("McdEditorPageComponentTes
     }, 1000)
 
     return stateMachine.appState$.map((s:FrontendAppState) => {
-      console.log("next state", s);
+      console.log("next state", s.mcdEditor);
 
       return <McdEditorPageComponent
         editorState={s.mcdEditor}
