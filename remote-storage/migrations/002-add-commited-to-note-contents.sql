@@ -1,0 +1,1 @@
+ALTER TABLE noteContents ADD COLUMN committed INTEGER DEFAULT 1;

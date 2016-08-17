@@ -29,7 +29,9 @@ export class Migrator {
       .controlled();
 
     return tap(controlledMigration$.flatMap(migration => {
+      console.log(migration.name, "starting");
       return this.run(migration).doOnCompleted(() => {
+        console.log(migration.name, "complete");
         controlledMigration$.request(1);
       });
     }))(() => controlledMigration$.request(1)).ignoreElements().toArray();

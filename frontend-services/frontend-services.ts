@@ -29,14 +29,14 @@ export class FrontendServices {
     this.visitLogin();
   };
   protected storage = window.localStorage;
-  protected replaceLocation = (s: string) => window.location.replace(s);
+  protected replaceLocation = (s:string) => window.location.replace(s);
   protected requestProvider = () => new XMLHttpRequest();
   protected dateProvider = () => new Date();
 
   constructor() {
   }
 
-  connect(machine: FrontendAppStateMachine) {
+  connect(machine:FrontendAppStateMachine) {
     var localStorage = new LocalStorage(this.storage);
     var settingsStorage = new LocalSettingsStorage(localStorage, () => this.logout());
     var mcdStorage = new LocalMcdStorage(localStorage, settingsStorage);
@@ -64,7 +64,7 @@ export class FrontendServices {
 
     machine.requestSummaryStats
       .withLatestFrom<FrontendAppState, FrontendAppState>(machine.allAppState$,
-        (req: any, state: FrontendAppState) => state)
+        (req:any, state:FrontendAppState) => state)
       .subscribe((state) => {
         machine.loadSummaryStats.onNext(fetchSummaryStats.request(
           tap(new apiModels.SummaryStatsRequest())(r => {
@@ -73,7 +73,7 @@ export class FrontendServices {
           loadClientSession()))
       });
 
-    machine.requestStoreScheduleUpdate.subscribe((scheduleUpdate: ScheduleUpdate) => {
+    machine.requestStoreScheduleUpdate.subscribe((scheduleUpdate:ScheduleUpdate) => {
       studyStorage.recordScheduleUpdate(scheduleUpdate);
     });
 
@@ -90,7 +90,7 @@ export class FrontendServices {
       keyDisposable.dispose();
     }).subscribe();
 
-    machine.writeEdit$.subscribe((note: Note) => {
+    machine.writeEdit$.subscribe((note:Note) => {
       var state = mcdStorage.getState();
       state.edited = true;
       if (state.queue.length === 0 || state.queue[0].id != note.id) {
@@ -104,7 +104,7 @@ export class FrontendServices {
       machine.finishLoadingMcds.subject.onNext(state);
     });
 
-    machine.requestCancelEdit.subscribe((note: Note) => {
+    machine.requestCancelEdit.subscribe((note:Note) => {
       var state = mcdStorage.getState();
       if (state.queue.length != 0 && state.queue[0].id == note.id) {
         state.edited = false;
@@ -115,11 +115,12 @@ export class FrontendServices {
       machine.finishLoadingMcds.subject.onNext(state);
     });
 
-    machine.requestCommitEdit.subscribe((note: Note) => {
+    machine.requestCommitEdit.subscribe((note:Note) => {
       var state = mcdStorage.getState();
       if (state.queue.length != 0 && state.queue[0].id == note.id) {
         state.edited = false;
         state.queue.splice(0, 1);
+
         if (state.committed.map(n => n.id).indexOf(note.id) === -1) {
           state.committed.push(note);
         }

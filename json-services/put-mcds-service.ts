@@ -6,9 +6,11 @@ import {EvernoteClientRx} from "../evernote-client-rx/evernote-client-rx";
 import {Evernote} from "evernote";
 import * as Rx from "rx";
 import {Note} from "../study-model/note-model";
+import {MasterScheduleStorage} from "../remote-storage/master-schedule-storage";
 
 export class PutMcdsService implements ServiceHandler<PutMcdsRequest, PutMcdsResponse, User> {
-  constructor(private evernoteClient:EvernoteClientRx) {
+  constructor(private evernoteClient:EvernoteClientRx,
+              private scheduleStorage:MasterScheduleStorage) {
   }
 
   endpoint = PutMcds;
@@ -37,6 +39,8 @@ export class PutMcdsService implements ServiceHandler<PutMcdsRequest, PutMcdsRes
       }).catch((e) => {
         console.error(e);
         return Rx.Observable.just(null);
+      }).toArray().flatMap(() => {
+        return this.scheduleStorage.commitNoteContents(res.completedIds);
       });
     });
   }

@@ -37,7 +37,7 @@ QUnit.test(`
   var syncService = new EvernoteSyncService(userStorage, evernoteClient, scheduleStorage);
   var getService = new GetMcdsService(evernoteClient, scheduleStorage,
     syncService, testObjects.testServer.timeProvider());
-  var putService = new PutMcdsService(evernoteClient);
+  var putService = new PutMcdsService(evernoteClient, scheduleStorage);
   var getRequest = new GetMcdsRequest();
   var getResponse = new GetMcdsResponse();
   var putRequest = new PutMcdsRequest();

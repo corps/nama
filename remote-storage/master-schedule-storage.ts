@@ -9,11 +9,13 @@ export class MasterScheduleStorage {
   constructor(private db:DatabaseRx) {
   }
 
-  recordNoteContents(userId:number, noteId:string, noteVersion:number, contents:string):Rx.Observable<void> {
-    return this.db.run("INSERT INTO noteContents (userId, noteId, noteVersion, contents) " +
-      "VALUES (?, ?, ?, ?);", [
-      userId, noteId, noteVersion, contents
-    ]).catch((e) => {
+  recordNoteContents(userId:number, noteId:string, noteVersion:number,
+                     contents:string):Rx.Observable<void> {
+    return this.db.run(
+      "INSERT INTO noteContents (userId, noteId, noteVersion, contents, committed) " +
+      "VALUES (?, ?, ?, ?, 0);", [
+        userId, noteId, noteVersion, contents
+      ]).catch((e) => {
       if (e.toString().indexOf("UNIQUE constraint failed") != -1) {
         return this.db.run(
           "UPDATE noteContents SET noteVersion = ?, contents = ? " +
@@ -25,6 +27,12 @@ export class MasterScheduleStorage {
     }).map(() => null);
   }
 
+  commitNoteContents(noteIds:string[]) {
+    return this.db.run(
+      "UPDATE noteContents SET committed = 1 WHERE noteId IN (" + noteIds.map(s => "?")
+        .join(",") + ")", noteIds).map(() => null);
+  }
+
   getNoteContents(noteId:string):Rx.Observable<NoteContentsRow> {
     return this.db.get("SELECT * FROM noteContents WHERE noteId = ?", [noteId]);
   }
@@ -34,7 +42,8 @@ export class MasterScheduleStorage {
     var noteIdClause = excludedIds.length > 0 ? "noteId NOT IN (" + excludedIds.map(s => "?")
       .join(",") + ") AND " : "";
     return this.db.each(
-      "SELECT * FROM noteContents WHERE " + noteIdClause + "userId = ? ORDER BY id DESC LIMIT ?",
+      "SELECT * FROM noteContents WHERE userId = ? AND " + noteIdClause +
+      "committed = 0 ORDER BY id DESC LIMIT ?",
       (excludedIds as any[]).concat([userId, count]));
   }
 

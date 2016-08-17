@@ -72,7 +72,7 @@ export class WebServer {
   protected getLatestNoteService = cached(() => new GetLatestNoteService(this.evernoteClient()));
   protected getMcdsService = cached(
     () => new GetMcdsService(this.evernoteClient(), this.scheduleStorage(), this.syncService(), this.timeProvider()))
-  protected putMcdsService = cached(() => new PutMcdsService(this.evernoteClient()));
+  protected putMcdsService = cached(() => new PutMcdsService(this.evernoteClient(), this.scheduleStorage()));
   protected fetchScheduleService = cached(
     () => new FetchScheduleService(this.scheduleStorage(), this.evernoteClient(), this.syncService(), this.timeProvider()));
   protected jsonServiceHandlers = cached<ServiceHandler<any, any, User>[]>(() =>
