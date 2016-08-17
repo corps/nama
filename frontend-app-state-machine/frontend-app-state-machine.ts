@@ -75,7 +75,7 @@ export class FrontendAppStateMachine {
         case "r":
           if (state.currentPage === CurrentPage.SUMMARY) {
             this.requestSync.subject.onNext(null);
-          } else {
+          } else if (state.currentPage !== CurrentPage.MCDS) {
             this.visitSummary.subject.onNext(null);
           }
           break;
@@ -495,6 +495,7 @@ export class FrontendAppStateMachine {
 
   beginStudy = tap(this.interactions.interaction<any>())(interaction => {
     this.accumulator<any>(interaction.subject, (_, last) => {
+      if (last.currentPage != CurrentPage.SUMMARY) return last;
       if (last.scheduledStudy.scheduledClozes.length > 0
         && last.currentPage !== state.CurrentPage.STUDYING) {
 
