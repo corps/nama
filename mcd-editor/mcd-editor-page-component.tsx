@@ -249,15 +249,57 @@ export class McdEditorPageComponent extends React.Component<McdEditorPageProps, 
   }
 
   renderDictionaries() {
+    var original = this.props.editorState.termState.editing.original;
+
     if (this.props.editorState.termState.language === "ja-JP") {
-      var original = this.props.editorState.termState.editing.original;
       return <div style={inputGroup}>
         <div>
-          <a style={itemStyles} target="_new"
+          <a style={itemStyles} target="_blank"
              href={"http://jisho.org/search/" + original}>Jisho</a>
-          <a style={itemStyles} target="_new"
+          <a style={itemStyles} target="_blank"
              href={`http://www.sanseido.net/User/Dic/Index.aspx?TWords=${original}&st=0&DORDER=&DailyJJ=checkbox&DailyEJ=checkbox&DailyJE=checkbox`}>
-            Sanseido
+            Sansei
+          </a>
+          <a style={itemStyles} target="_blank"
+             href={`http://eow.alc.co.jp/search?q=${original}&ref=sa`}>
+            Alc
+          </a>
+          <a style={itemStyles} target="_blank"
+             href={`http://dictionary.goo.ne.jp/srch/all/${original}/m0u/`}>
+            Yahoo
+          </a>
+          <a style={itemStyles} target="_blank"
+             href={`https://www.google.co.jp/?q=${original}とは`}>
+            Google
+          </a>
+        </div>
+      </div>
+    }
+
+    if (this.props.editorState.termState.language === "zh-HK") {
+      return <div style={inputGroup}>
+        <div>
+          <a style={itemStyles} target="_blank"
+             href={"http://jisho.org/search/" + original}>Jisho</a>
+          <a style={itemStyles} target="_blank"
+             href={`https://glosbe.com/ja/yue/${original}`}>
+            Glosbe
+          </a>
+          <a style={itemStyles} target="_blank"
+             href={`http://www.cantonese.sheik.co.uk/dictionary/search/?searchtype=1&text=${original}`}>
+            CantoD
+          </a>
+          <a style={itemStyles} target="_blank"
+             href={`https://hk.dictionary.yahoo.com/dictionary?p=${original}`}>
+            Yahoo
+          </a>
+          <a style={itemStyles} target="_blank"
+             href={`https://www.cantoneseclass101.com/cantonese-dictionary/`}>
+            C 101
+          </a>
+          <a style={itemStyles} target="_blank"
+             href={`http://humanum.arts.cuhk.edu.hk/Lexis/lexi-can/`}>
+            lexi-can
           </a>
         </div>
       </div>
