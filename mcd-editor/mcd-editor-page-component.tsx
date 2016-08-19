@@ -116,7 +116,6 @@ export class McdEditorPageComponent extends React.Component<McdEditorPageProps, 
 
   inputActionHandler<T extends McdEditorAction>(klass:{new(v:string):T}) {
     return (e:React.SyntheticEvent) => {
-      e.stopPropagation();
       this.props.onAction(new klass((e.target as any).value));
     }
   }
