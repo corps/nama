@@ -304,16 +304,19 @@ export class EvernoteClientRx {
   }
 
   private wrapWithLimiter<R>(observable:Rx.Observable<R>):Rx.Observable<R> {
-    var secret = this.getSecret();
-    var rateLimitedUntil = this.rateLimitCache[secret];
-
-    if (rateLimitedUntil != null && Date.now() < rateLimitedUntil) {
-      console.error("Rate limited for " + moment(rateLimitedUntil).from(moment()));
-      return Rx.Observable.throw<R>("Rate limited for " + moment(rateLimitedUntil).from(moment()));
-    }
-
     var concurrencyLimiter = this.constructConcurrencyLimiter();
-    return concurrencyLimiter.start(observable);
+    return concurrencyLimiter.start(Rx.Observable.create<any>((observer:Rx.Observer<any>) => {
+      var secret = this.getSecret();
+      var rateLimitedUntil = this.rateLimitCache[secret];
+
+      if (rateLimitedUntil != null && Date.now() < rateLimitedUntil) {
+        console.error("Rate limited for " + moment(rateLimitedUntil).from(moment()));
+        observer.onError(new Error("Rate limited for " + moment(rateLimitedUntil).from(moment())));
+        return;
+      }
+
+      observer.onCompleted();
+    }).toArray().flatMap(() => observable));
   }
 
   private getCallback<R>(s:Rx.Observer<R>) {
