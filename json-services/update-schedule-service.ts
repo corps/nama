@@ -15,14 +15,14 @@ import {deserializeEvernoteThrift} from "../thrift-tools/thrift-tools";
 import {EvernoteSyncService} from "../evernote-mediators/evernote-sync-service";
 
 export class UpdateScheduleService implements ServiceHandler<UpdateScheduleRequest, UpdateScheduleResponse, User> {
-  constructor(private evernoteClient:EvernoteClientRx,
-              private schedulerStorage:MasterScheduleStorage,
-              private syncService:EvernoteSyncService) {
+  constructor(private evernoteClient: EvernoteClientRx,
+              private schedulerStorage: MasterScheduleStorage,
+              private syncService: EvernoteSyncService) {
   }
 
   endpoint = UpdateSchedule;
 
-  getNote(userClient:EvernoteClientRx, noteId:string):Rx.Observable<Evernote.Note> {
+  getNote(userClient: EvernoteClientRx, noteId: string): Rx.Observable<Evernote.Note> {
     return this.schedulerStorage.getNoteContents(noteId).flatMap(noteCache => {
       if (noteCache == null) {
         return userClient.getNote(noteId);
@@ -35,13 +35,14 @@ export class UpdateScheduleService implements ServiceHandler<UpdateScheduleReque
     })
   }
 
-  handle(req:UpdateScheduleRequest, res:UpdateScheduleResponse, user$:Rx.Observable<User>) {
-    var userClient:EvernoteClientRx;
+  handle(req: UpdateScheduleRequest, res: UpdateScheduleResponse, user$: Rx.Observable<User>) {
+    var userClient: EvernoteClientRx;
     return user$.flatMap((user) => {
+      console.log("starting update schedule sync");
       return this.syncService.sync(user).ignoreElements().toArray().map(() => user);
     }).flatMap((user) => {
       userClient = this.evernoteClient.forUser(user);
-      var updatesByNoteId = {} as {[k:string]:ScheduleUpdate[]};
+      var updatesByNoteId = {} as {[k: string]: ScheduleUpdate[]};
       for (var scheduleUpdate of req.schedules) {
         var noteId = scheduleUpdate.scheduledIdentifier.clozeIdentifier.noteId;
         (updatesByNoteId[noteId] = updatesByNoteId[noteId] || [] as ScheduleUpdate[])
@@ -49,19 +50,26 @@ export class UpdateScheduleService implements ServiceHandler<UpdateScheduleReque
       }
 
       return Rx.Observable.merge<any>(Object.keys(updatesByNoteId).map((noteId) => {
+        console.log("starting get note for", noteId);
         return this.getNote(userClient, noteId).flatMap(evernote => {
           var mapper = new NoteContentsMapper(evernote.content, updatesByNoteId[noteId]);
+          console.log("performing note mapping for", noteId);
           mapper.map();
+
+          console.log("note mapping for", noteId, "finished");
           evernote.content = mapper.document.toString();
           evernote.title = mapper.note.terms.map(t => t.original).join(", ");
           evernote.updated = Date.now();
+          console.log("writing out note for", noteId);
           return userClient.updateNote(evernote).map(() => null);
         }).catch((e) => {
+          console.error("ERROR for update schedule", noteId, e);
           if (e.rateLimitDuration) {
             return Rx.Observable.throw(e);
           }
           return Rx.Observable.just(null);
-        }).doOnNext((note:Evernote.Note) => {
+        }).doOnNext((note: Evernote.Note) => {
+          console.log("note finished", note.guid);
           updatesByNoteId[noteId].forEach(update => {
             update.scheduledIdentifier.noteVersion += 1;
             res.completed.push(update.scheduledIdentifier);
