@@ -69,7 +69,7 @@ export class UpdateScheduleService implements ServiceHandler<UpdateScheduleReque
           }
           return Rx.Observable.just(null);
         }).doOnNext((note: Evernote.Note) => {
-          console.log("note finished", note.guid);
+          console.log("note finished", noteId);
           updatesByNoteId[noteId].forEach(update => {
             update.scheduledIdentifier.noteVersion += 1;
             res.completed.push(update.scheduledIdentifier);
