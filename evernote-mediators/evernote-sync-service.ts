@@ -3,8 +3,8 @@ import {MasterScheduleStorage} from "../remote-storage/master-schedule-storage";
 import {EvernoteClientRx} from "../evernote-client-rx/evernote-client-rx";
 import * as Rx from "rx";
 import {User, StudyBook} from "../user-model/user-model";
-import { Evernote } from "evernote";
-import { tap, transform } from "../utils/obj";
+import {Evernote} from "evernote";
+import {tap, transform} from "../utils/obj";
 import {ClozeIdentifier} from "../study-model/note-model";
 import {mapEvernoteToNote} from "./map-evernote-to-note";
 import {serializeEvernoteThrift} from "../thrift-tools/thrift-tools";
@@ -17,39 +17,42 @@ interface SyncBatch {
 }
 
 export class EvernoteSyncService {
-  protected runningProcesses:{[k:number]:Rx.Observable<any>} = {};
+  protected runningProcesses: {[k: number]: Rx.Observable<any>} = {};
 
-  constructor(private userStorage:UserStorage,
-              private evernoteClient:EvernoteClientRx,
-              private scheduleStorage:MasterScheduleStorage,
+  constructor(private userStorage: UserStorage,
+              private evernoteClient: EvernoteClientRx,
+              private scheduleStorage: MasterScheduleStorage,
               private batchSize = 10,
               private defaultNotebookName = "弁SRS Study Book") {
   }
 
-  sync<T>(user:User):Rx.Observable<T> {
+  sync<T>(user: User): Rx.Observable<T> {
     if (this.runningProcesses[user.id] == null) {
       this.runningProcesses[user.id] = this.createSyncFor(user);
     }
     return this.runningProcesses[user.id] as any;
   }
 
-  private createSyncFor(user:User):Rx.Observable<void> {
+  private createSyncFor(user: User): Rx.Observable<void> {
+    var userId = user.id;
+    console.log("creating sync subject for", userId);
     return tap(new Rx.AsyncSubject<void>())(s => {
       this.innerSync(user)
         .finally(() => {
-          delete this.runningProcesses[user.id];
+          console.log("Finished sync, clearing process", userId);
+          delete this.runningProcesses[userId];
         })
         .subscribe(s);
     });
   }
 
-  protected innerSync(user:User):Rx.Observable<any> {
+  protected innerSync(user: User): Rx.Observable<any> {
     return this.findOrCreateStudyBook(user)
       .flatMap((studyBook) => this.loadUserStudyBook(user, studyBook))
       .flatMap(b => this.processBatch(b));
   }
 
-  private loadUserStudyBook(user:User, studyBook:[string, number]):Rx.Observable<SyncBatch> {
+  private loadUserStudyBook(user: User, studyBook: [string, number]): Rx.Observable<SyncBatch> {
     var [guid, syncedState] = studyBook;
     if (guid !== user.studyBook.guid) {
       return this.userStorage.addNewStudyBook(user.id, guid, syncedState).map((id) => {
@@ -74,7 +77,7 @@ export class EvernoteSyncService {
   }
 
   private syncFilter = tap(new Evernote.SyncChunkFilter())(
-    (filter:Evernote.SyncChunkFilter) => {
+    (filter: Evernote.SyncChunkFilter) => {
       filter.includeNotes = true;
       filter.includeExpunged = true;
 
@@ -88,7 +91,8 @@ export class EvernoteSyncService {
       filter.includeNoteResources = false;
     });
 
-  private processBatch(batchInfo:SyncBatch):Rx.Observable<any> {
+  private processBatch(batchInfo: SyncBatch): Rx.Observable<any> {
+    console.log("processing batch", batchInfo.syncState);
     var userClient = this.evernoteClient.forUser(batchInfo.user);
     return userClient.sync(batchInfo.syncState, this.batchSize, this.syncFilter)
       .flatMap<Evernote.SyncChunk>(chunk => {
@@ -142,21 +146,21 @@ export class EvernoteSyncService {
         return Rx.Observable.merge(
           deletedAllInactive$, deletedNotInStudyBook$, updatedInStudyBook$
         ).ignoreElements().toArray().map(() => chunk)
-      }).flatMap((chunk:Evernote.SyncChunk) => {
+      }).flatMap((chunk: Evernote.SyncChunk) => {
         return this.userStorage.updateStudyBook(batchInfo.user.studyBook.id, chunk.chunkHighUSN)
           .flatMap(() => {
             if (chunk.chunkHighUSN === chunk.updateCount) {
               return Rx.Observable.just(null);
             }
 
-            return this.processBatch(transform<SyncBatch>(batchInfo)((info:SyncBatch) => {
+            return this.processBatch(transform<SyncBatch>(batchInfo)((info: SyncBatch) => {
               info.syncState = chunk.chunkHighUSN;
             }));
           });
       });
   }
 
-  processNoteUpdate(user:User, evernote:Evernote.Note):Rx.Observable<any> {
+  processNoteUpdate(user: User, evernote: Evernote.Note): Rx.Observable<any> {
     var note = mapEvernoteToNote(evernote);
     var version = evernote.updateSequenceNum;
 
@@ -183,9 +187,9 @@ export class EvernoteSyncService {
     }));
   }
 
-  findOrCreateStudyBook(user:User):Rx.Observable<[string, number]> {
+  findOrCreateStudyBook(user: User): Rx.Observable<[string, number]> {
     var userClient = this.evernoteClient.forUser(user);
-    return userClient.listNotebooks().flatMap((notebooks:Evernote.Notebook[]) => {
+    return userClient.listNotebooks().flatMap((notebooks: Evernote.Notebook[]) => {
       return userClient.getSyncState().flatMap((syncState) => {
         var existingBook = this.findStudyBookIn(user, notebooks, syncState);
         if (existingBook) return Rx.Observable.just(existingBook);
@@ -199,10 +203,10 @@ export class EvernoteSyncService {
     })
   }
 
-  private findStudyBookIn(user:User, notebooks:Evernote.Notebook[],
-                          syncState:Evernote.SyncState):[string, number] {
+  private findStudyBookIn(user: User, notebooks: Evernote.Notebook[],
+                          syncState: Evernote.SyncState): [string, number] {
     if (!notebooks) return null;
-    var contingentBook:[string, number];
+    var contingentBook: [string, number];
     for (var notebook of notebooks) {
       if (notebook.guid === user.studyBook.guid) return [notebook.guid, user.studyBook.syncVersion];
       if (notebook.name === this.defaultNotebookName) {
