@@ -245,11 +245,13 @@ export class EvernoteClientRx {
     return Rx.Observable.create<any>((observer: Rx.Observer<any>) => {
       var secret = this.getSecret();
       var rateLimitedUntil = this.rateLimitCache[secret];
+      console.log("checkin rate limit", rateLimitedUntil);
 
       if (rateLimitedUntil != null && Date.now() < rateLimitedUntil) {
-        console.error("Rate limited for " + moment(rateLimitedUntil).from(moment()));
-        var error = new Error("Rate limited for");
-        (error as any).rateLimitDuration = Date.now() - rateLimitedUntil;
+        var from = moment(rateLimitedUntil).from(moment());
+        console.error("Rate limited for " + from);
+        var error = new Error("Rate limited for " + from);
+        (error as any).rateLimitDuration = (rateLimitedUntil - Date.now()) / 1000;
         observer.onError(error);
         return;
       }
