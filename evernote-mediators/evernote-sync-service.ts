@@ -27,23 +27,14 @@ export class EvernoteSyncService {
   }
 
   sync<T>(user: User): Rx.Observable<T> {
-    if (this.runningProcesses[user.id] == null) {
-      this.runningProcesses[user.id] = this.createSyncFor(user);
-    }
-    return this.runningProcesses[user.id] as any;
-  }
-
-  private createSyncFor(user: User): Rx.Observable<void> {
     var userId = user.id;
-    console.log("creating sync subject for", userId);
-    return tap(new Rx.AsyncSubject<void>())(s => {
-      this.innerSync(user)
-        .finally(() => {
-          console.log("Finished sync, clearing process", userId);
-          delete this.runningProcesses[userId];
-        })
-        .subscribe(s);
-    });
+    if (this.runningProcesses[userId] == null) {
+      var sync = this.runningProcesses[userId] = this.innerSync(user).finally(() => {
+        console.log("Finished sync, clearing process", userId);
+        delete this.runningProcesses[userId];
+      })
+    }
+    return this.runningProcesses[userId] as any;
   }
 
   protected innerSync(user: User): Rx.Observable<any> {
