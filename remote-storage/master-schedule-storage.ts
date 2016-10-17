@@ -6,11 +6,11 @@ import {tap} from "../utils/obj";
 import {DatabaseRx} from "../database-rx/database-rx";
 
 export class MasterScheduleStorage {
-  constructor(private db:DatabaseRx) {
+  constructor(private db: DatabaseRx) {
   }
 
-  recordNoteContents(userId:number, noteId:string, noteVersion:number,
-                     contents:string):Rx.Observable<void> {
+  recordNoteContents(userId: number, noteId: string, noteVersion: number,
+                     contents: string): Rx.Observable<void> {
     return this.db.run(
       "INSERT INTO noteContents (userId, noteId, noteVersion, contents, committed) " +
       "VALUES (?, ?, ?, ?, 0);", [
@@ -27,18 +27,29 @@ export class MasterScheduleStorage {
     }).map(() => null);
   }
 
-  commitNoteContents(noteIds:string[]) {
+  clearLeases(clozeIdentifiers:string[]) {
     return this.db.run(
-      "UPDATE noteContents SET committed = 1 WHERE noteId IN (" + noteIds.map(s => "?")
+      "UPDATE schedule SET leaseExpiresAtUnix = -1 WHERE clozeIdentifier IN (" +
+      clozeIdentifiers.map(s => "?").join(", ") + ")", clozeIdentifiers);
+  }
+
+  commitNoteContents(noteIds: string[], committed = true) {
+    var committedValue = committed ? 1 : 0;
+
+    return this.db.run(
+      "UPDATE noteContents SET committed = " +
+      committedValue +
+      " WHERE noteId IN (" + noteIds.map(
+        s => "?")
         .join(",") + ")", noteIds).map(() => null);
   }
 
-  getNoteContents(noteId:string):Rx.Observable<NoteContentsRow> {
+  getNoteContents(noteId: string): Rx.Observable<NoteContentsRow> {
     return this.db.get("SELECT * FROM noteContents WHERE noteId = ?", [noteId]);
   }
 
-  getRecentContents(userId:number, count:number,
-                    excludedIds:string[]):Rx.Observable<NoteContentsRow> {
+  getRecentContents(userId: number, count: number,
+                    excludedIds: string[]): Rx.Observable<NoteContentsRow> {
     var noteIdClause = excludedIds.length > 0 ? "noteId NOT IN (" + excludedIds.map(s => "?")
       .join(",") + ") AND " : "";
     return this.db.each(
@@ -47,12 +58,12 @@ export class MasterScheduleStorage {
       (excludedIds as any[]).concat([userId, count]));
   }
 
-  recordSchedule(user:User,
-                 noteVersion:number,
-                 clozeIdentifier:ClozeIdentifier,
-                 tags:string[],
-                 schedule:Schedule,
-                 clearLease = false):Rx.Observable<void> {
+  recordSchedule(user: User,
+                 noteVersion: number,
+                 clozeIdentifier: ClozeIdentifier,
+                 tags: string[],
+                 schedule: Schedule,
+                 clearLease = false): Rx.Observable<void> {
     var normalizedTags = " " + tags.join(" ") + " ";
 
     return this.db.run("INSERT INTO schedule " +
@@ -84,7 +95,7 @@ export class MasterScheduleStorage {
     }).map(() => null)
   }
 
-  findSchedule(user:User, curTimeUnix:number, maxResults:number, tags:string[]) {
+  findSchedule(user: User, curTimeUnix: number, maxResults: number, tags: string[]) {
     var futureDue = new Rx.Subject<ScheduleRow>();
     return this.findSchedulePart(user, curTimeUnix, maxResults, tags, false)
       .doOnNext(() => maxResults -= 1)
@@ -93,24 +104,28 @@ export class MasterScheduleStorage {
       }).concat(futureDue);
   }
 
-  deleteAllInNote(noteId:string, version:number):Rx.Observable<any> {
+  deleteAllInNote(noteId: string, version: number): Rx.Observable<any> {
     return this.db.run("DELETE FROM schedule WHERE noteId = ? AND noteVersion < ? ",
-      [noteId, version]);
+      [noteId, version]).flatMap(() => {
+      return this.db.run("DELETE FROM noteContents WHERE noteId = ? AND noteVersion < ?",
+        [noteId, version]);
+    });
   }
 
-  deleteAllOtherTerms(noteId:string, foundTermMarkers:string[], version:number):Rx.Observable<any> {
+  deleteAllOtherTerms(noteId: string, foundTermMarkers: string[],
+                      version: number): Rx.Observable<any> {
     return this.db.run("DELETE FROM schedule WHERE noteId = ? AND noteVersion < ?" +
       "AND marker NOT IN (" + foundTermMarkers.map(() => "?").join(", ") + ")",
       ([noteId, version] as any[]).concat(foundTermMarkers))
   }
 
-  deleteAllOtherClozes(noteId:string, termMarker:string, clozeLength:number,
-                       version:number):Rx.Observable<any> {
+  deleteAllOtherClozes(noteId: string, termMarker: string, clozeLength: number,
+                       version: number): Rx.Observable<any> {
     return this.db.run("DELETE FROM schedule WHERE noteId = ? AND noteVersion < ? AND marker = ? " +
       "AND clozeIdx >= ?", [noteId, version, termMarker, clozeLength]);
   }
 
-  findNumDue(user:User, untilUnix:number, tags:string[]):Rx.Observable<number> {
+  findNumDue(user: User, untilUnix: number, tags: string[]): Rx.Observable<number> {
     var tagConditional = tags.length == 0
       ? ""
       : "AND " + tags.map(tag => `instr(tags, ?) > 0`).join(" AND ") + " "
@@ -123,17 +138,17 @@ export class MasterScheduleStorage {
         .concat(tagChecks)).map(result => result.count);
   }
 
-  lease(scheduleRows:ScheduleRow[], expiration:number) {
+  lease(scheduleRows: ScheduleRow[], expiration: number) {
     return this.db.run("UPDATE schedule SET leaseExpiresAtUnix = ? " +
       "WHERE id IN (" + scheduleRows.map(() => "?").join(",") + ")",
       [expiration].concat(scheduleRows.map(sr => sr.id)));
   }
 
-  private findSchedulePart(user:User,
-                           curTimeUnix:number,
-                           maxResults:number,
-                           tags:string[],
-                           ascending:boolean) {
+  private findSchedulePart(user: User,
+                           curTimeUnix: number,
+                           maxResults: number,
+                           tags: string[],
+                           ascending: boolean) {
     if (maxResults <= 0) return Rx.Observable.empty<ScheduleRow>();
 
     var tagConditional = tags.length == 0
@@ -157,20 +172,20 @@ export class MasterScheduleStorage {
 }
 
 export interface ScheduleRow {
-  id:number
-  clozeIdentifier:string
-  studyBookId:number
-  noteId:string
-  marker:string
-  clozeIdx:number
-  dueAtMinutes:number
-  noteVersion:number
-  tags:string
+  id: number
+  clozeIdentifier: string
+  studyBookId: number
+  noteId: string
+  marker: string
+  clozeIdx: number
+  dueAtMinutes: number
+  noteVersion: number
+  tags: string
 }
 
 export interface NoteContentsRow {
-  id:number
-  noteId:string
-  noteVersion:number
-  contents:string
+  id: number
+  noteId: string
+  noteVersion: number
+  contents: string
 }

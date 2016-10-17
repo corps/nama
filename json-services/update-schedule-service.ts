@@ -43,16 +43,24 @@ export class UpdateScheduleService implements ServiceHandler<UpdateScheduleReque
     }).flatMap((user) => {
       userClient = this.evernoteClient.forUser(user);
       var updatesByNoteId = {} as {[k: string]: ScheduleUpdate[]};
+      var correctionsByNoteId = {} as {[k: string]: boolean};
+
       for (var scheduleUpdate of req.schedules) {
         var noteId = scheduleUpdate.scheduledIdentifier.clozeIdentifier.noteId;
         (updatesByNoteId[noteId] = updatesByNoteId[noteId] || [] as ScheduleUpdate[])
           .push(scheduleUpdate);
+
+        if (scheduleUpdate.correction) {
+          correctionsByNoteId[noteId] = true;
+        }
       }
 
       return Rx.Observable.merge<any>(Object.keys(updatesByNoteId).map((noteId) => {
         console.log("starting get note for", noteId);
         return this.getNote(userClient, noteId).flatMap(evernote => {
-          var mapper = new NoteContentsMapper(evernote.content, updatesByNoteId[noteId]);
+          var noteUpdates = updatesByNoteId[noteId];
+
+          var mapper = new NoteContentsMapper(evernote.content, noteUpdates);
           console.log("performing note mapping for", noteId);
           mapper.map();
 
@@ -61,7 +69,9 @@ export class UpdateScheduleService implements ServiceHandler<UpdateScheduleReque
           evernote.title = mapper.note.terms.map(t => t.original).join(", ");
           evernote.updated = Date.now();
           console.log("writing out note for", noteId);
-          return userClient.updateNote(evernote).map(() => null);
+          var updateNote = userClient.updateNote(evernote).map(() => null);
+
+          return updateNote;
         }).catch((e) => {
           console.error("ERROR for update schedule", noteId, e);
           if (e.rateLimitDuration) {
@@ -78,7 +88,11 @@ export class UpdateScheduleService implements ServiceHandler<UpdateScheduleReque
           console.error(e);
           return Rx.Observable.just(null);
         });
-      }))
+      }).concat([
+        this.schedulerStorage.commitNoteContents(Object.keys(correctionsByNoteId), false),
+        this.schedulerStorage.clearLeases(req.schedules.map(
+          s => s.scheduledIdentifier.clozeIdentifier.toString()))
+      ]));
     });
   }
 }

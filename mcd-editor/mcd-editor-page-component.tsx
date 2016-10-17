@@ -10,7 +10,8 @@ import {
   EditTermHint,
   EditTermDetails,
   EditTermClozes,
-  FinishEditingTerm, EditTermLanguage, EditTermVoiceUrl, EditTermFlipSpeak
+  FinishEditingTerm, EditTermLanguage, EditTermVoiceUrl, EditTermFlipSpeak,
+  EditTermFlipTrainSpeaking
 } from "./mcd-editor-actions";
 import {McdEditorState} from "./mcd-editor-state";
 import {backgroundLayer} from "../common-styles/layouts";
@@ -20,8 +21,8 @@ import * as css from "../css-properties/css-properties";
 import {simpleInput} from "../common-styles/inputs";
 
 export interface McdEditorPageProps {
-  onAction:(action:McdEditorAction)=>void
-  editorState:McdEditorState
+  onAction: (action: McdEditorAction)=>void
+  editorState: McdEditorState
 }
 
 var termContainerStyles = {
@@ -42,10 +43,10 @@ var inputGroup = {
 
 var inputStyles = simpleInput(css.Percentage.of(90));
 
-var detailsStyles = tap(simpleInput(css.Percentage.of(90)))((s:CSSProperties) => {
+var detailsStyles = tap(simpleInput(css.Percentage.of(90)))((s: CSSProperties) => {
 });
 
-var checkboxStyles = tap({} as CSSProperties)((s:CSSProperties) => {
+var checkboxStyles = tap({} as CSSProperties)((s: CSSProperties) => {
   s.marginLeft = css.Pixels.of(8);
   s.backgroundColor = Colors.BG;
   s.verticalAlign = css.VerticalAlign.MIDDLE;
@@ -62,14 +63,14 @@ var characterSpanStyles = tap({} as CSSProperties)((s => {
   // s.paddingRight = css.Pixels.of(11);
 }));
 
-var selectSpanStyles = tap({} as CSSProperties)((s:CSSProperties) => {
+var selectSpanStyles = tap({} as CSSProperties)((s: CSSProperties) => {
   s.borderRadius = css.Pixels.of(6);
   s.backgroundColor = Colors.OLD_PEA;
   s.boxShadow = new css.BoxShadow(Colors.DEAR_OLD_TEDDY, css.Pixels.of(4), css.Pixels.of(4));
   s.fontWeight = "bold";
 });
 
-var termSpanStyles = tap({} as CSSProperties)((s:CSSProperties) => {
+var termSpanStyles = tap({} as CSSProperties)((s: CSSProperties) => {
   s.borderRadius = css.Pixels.of(6);
   s.backgroundColor = Colors.YORK_OLD;
   s.boxShadow = new css.BoxShadow(Colors.DEAR_OLD_TEDDY, css.Pixels.of(4), css.Pixels.of(4));
@@ -114,14 +115,14 @@ export class McdEditorPageComponent extends React.Component<McdEditorPageProps, 
     </div>;
   }
 
-  inputActionHandler<T extends McdEditorAction>(klass:{new(v:string):T}) {
-    return (e:React.SyntheticEvent) => {
+  inputActionHandler<T extends McdEditorAction>(klass: {new(v: string): T}) {
+    return (e: React.SyntheticEvent) => {
       this.props.onAction(new klass((e.target as any).value));
     }
   }
 
-  actionHandler(action:McdEditorAction) {
-    return (e:React.SyntheticEvent) => {
+  actionHandler(action: McdEditorAction) {
+    return (e: React.SyntheticEvent) => {
       e.preventDefault();
       e.stopPropagation();
       this.props.onAction(action);
@@ -237,6 +238,14 @@ export class McdEditorPageComponent extends React.Component<McdEditorPageProps, 
                  onChange={this.actionHandler(new EditTermFlipSpeak())}
                  checked={this.props.editorState.termState.speakIt}/>
         </div>
+        { this.props.editorState.termState.speakIt ?
+          <div style={inputGroup}>
+            Train Speaking
+            <input type="checkbox" style={checkboxStyles}
+                   onChange={this.actionHandler(new EditTermFlipTrainSpeaking())}
+                   checked={this.props.editorState.termState.trainSpeaking}/>
+          </div>
+          : null }
         <div style={inputGroup}>
           <input type="text" style={inputStyles}
                  onChange={this.inputActionHandler(EditTermVoiceUrl)}
@@ -336,7 +345,7 @@ export class McdEditorPageComponent extends React.Component<McdEditorPageProps, 
             {characterSpans.slice(0, termState.selectedRegionIdx)}
             </span>);
           spans.push(<span style={selectSpanStyles}
-            key={noteState.note.id + "-" + i + "2"}>{characterSpans[termState.selectedRegionIdx]}</span>);
+                           key={noteState.note.id + "-" + i + "2"}>{characterSpans[termState.selectedRegionIdx]}</span>);
           spans.push(<span key={noteState.note.id + "-" + i + "3"}>{characterSpans.slice(
             termState.selectedRegionIdx + 1)}</span>);
         } else {

@@ -180,6 +180,10 @@ export class Term {
 export class Cloze {
   segment = "";
   schedule = new Schedule();
+
+  speakMatch() {
+    return this.segment.match(/^(speak|train):/);
+  }
 }
 
 export class ClozeIdentifier {

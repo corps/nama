@@ -31,3 +31,5 @@ testdb
 
 config.json
 test-config.json
+
+npm-debug.log

@@ -10,6 +10,7 @@ export class ScheduledClozeIdentifier {
 export class ScheduleUpdate {
   scheduledIdentifier = new ScheduledClozeIdentifier();
   schedule = new Schedule();
+  correction = false;
 }
 
 export class UpdateScheduleRequest {

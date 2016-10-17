@@ -13,6 +13,7 @@ export class McdEditorTermState {
   language = "";
   voiceUrl = "";
   speakIt = false;
+  trainSpeaking = false;
   clozes = [] as string[];
   selectedRegion = -1;
   selectedRegionIdx = -1;

@@ -63,7 +63,7 @@ export function buildSpeakNote() {
   term1.clozes.push(cloze1);
 
   cloze1.segment =
-    "speak:ja-JP:https://dl.dropboxusercontent.com/u/63194950/glossika/JAYUE-F2-GMS/JAYUE-F2-GMS-C-1001_silence_01.mp3";
+    "train:ja-JP:https://dl.dropboxusercontent.com/u/63194950/glossika/JAYUE-F2-GMS/JAYUE-F2-GMS-C-1001_silence_01.mp3";
   note.terms.push(term1);
 
   note.id = "note1";

@@ -38,21 +38,21 @@ var headerStyles = tap({} as CSSProperties)(s => {
   assign(s, writingMode("initial"));
 });
 
-var dueAtStyles = tap({} as CSSProperties)((s:CSSProperties) => {
+var dueAtStyles = tap({} as CSSProperties)((s: CSSProperties) => {
   s.fontSize = css.Pixels.of(15);
 });
 
-var answerDetailsBlockStyles = tap({} as CSSProperties)((s:CSSProperties) => {
+var answerDetailsBlockStyles = tap({} as CSSProperties)((s: CSSProperties) => {
   s.width = css.Percentage.of(100);
   s.overflowX = "auto";
   s.WebkitOverflowScrolling = "touch";
 });
 
-var flourishContainerStyles = tap({} as CSSProperties)((s:CSSProperties) => {
+var flourishContainerStyles = tap({} as CSSProperties)((s: CSSProperties) => {
   s.position = css.Position.RELATIVE;
 });
 
-var hintContainerStyles = tap({} as CSSProperties)((s:CSSProperties) => {
+var hintContainerStyles = tap({} as CSSProperties)((s: CSSProperties) => {
   s.width = css.Percentage.of(100);
   s.height = css.Percentage.of(100);
   s.position = css.Position.ABSOLUTE;
@@ -60,7 +60,7 @@ var hintContainerStyles = tap({} as CSSProperties)((s:CSSProperties) => {
   s.marginTop = css.Pixels.of(-19);
 });
 
-var hintBlockStyles = tap({} as CSSProperties)((s:CSSProperties) => {
+var hintBlockStyles = tap({} as CSSProperties)((s: CSSProperties) => {
   s.backgroundColor = Colors.OLD_PAPER;
   s.paddingLeft = css.Pixels.of(6);
   s.paddingRight = css.Pixels.of(6);
@@ -73,7 +73,7 @@ var hintBlockStyles = tap({} as CSSProperties)((s:CSSProperties) => {
   s.display = css.Display.INLINE_BLOCK;
 });
 
-var answerTermStyles = tap({} as CSSProperties)((s:CSSProperties) => {
+var answerTermStyles = tap({} as CSSProperties)((s: CSSProperties) => {
   s.paddingLeft = css.Pixels.of(16);
   s.paddingRight = css.Pixels.of(16);
   s.marginLeft = css.Pixels.of(10);
@@ -84,7 +84,7 @@ var answerTermStyles = tap({} as CSSProperties)((s:CSSProperties) => {
   s.fontWeight = "bold";
 });
 
-var answerClozeStyles = tap({} as CSSProperties)((s:CSSProperties) => {
+var answerClozeStyles = tap({} as CSSProperties)((s: CSSProperties) => {
   s.paddingLeft = css.Pixels.of(16);
   s.paddingRight = css.Pixels.of(16);
   s.marginLeft = css.Pixels.of(10);
@@ -95,7 +95,18 @@ var answerClozeStyles = tap({} as CSSProperties)((s:CSSProperties) => {
   s.fontWeight = "bold";
 });
 
-var topContainerStyles = tap({} as CSSProperties)((s:CSSProperties) => {
+var speakClozeStyles = tap({} as CSSProperties)((s: CSSProperties) => {
+  s.paddingTop = css.Pixels.of(16);
+  s.paddingBottom = css.Pixels.of(16);
+  s.marginTop = css.Pixels.of(10);
+  s.marginBottom = css.Pixels.of(10);
+  s.borderRadius = css.Pixels.of(6);
+  s.backgroundColor = Colors.OLD_PEA;
+  s.boxShadow = new css.BoxShadow(Colors.DEAR_OLD_TEDDY, css.Pixels.of(4), css.Pixels.of(4));
+  s.fontWeight = "bold";
+});
+
+var topContainerStyles = tap({} as CSSProperties)((s: CSSProperties) => {
   s.height = css.Percentage.of(100);
   s.width = css.Percentage.of(100);
   s.textAlign = css.TextAlign.CENTER;
@@ -103,7 +114,7 @@ var topContainerStyles = tap({} as CSSProperties)((s:CSSProperties) => {
   s.overflowY = "hidden";
 });
 
-var termStyles = tap({} as CSSProperties)((s:CSSProperties) => {
+var termStyles = tap({} as CSSProperties)((s: CSSProperties) => {
   s.paddingTop = css.Pixels.of(16);
   s.paddingBottom = css.Pixels.of(16);
   s.marginTop = css.Pixels.of(10);
@@ -114,50 +125,56 @@ var termStyles = tap({} as CSSProperties)((s:CSSProperties) => {
   s.fontWeight = "bold";
 });
 
-var clozeStyles = tap({} as CSSProperties)((s:CSSProperties) => {
+var clozeStyles = tap({} as CSSProperties)((s: CSSProperties) => {
   assign(s, writingMode("initial"));
   s.fontFamily = "Impact, Charcoal, sans-serif";
 });
 
+var speakTrainingStyles = tap({} as CSSProperties)((s: CSSProperties) => {
+  // s.display = css.Display.INLINE_BLOCK;
+  s.paddingLeft = css.Pixels.of(10);
+  s.paddingRight = css.Pixels.of(10);
+});
+
 interface LocalProps {
-  preMarker:string
-  postMarker:string
-  preCloze:string
-  postCloze:string
-  answerTerm:string
-  answerCloze:string
-  answerDetailsFirstCharacter:string
-  answerDetails:string[]
-  props:StudyCardProps
-  easyDueAtSecs:number
-  fineDueAtSecs:number
-  hardDueAtSecs:number
-  nowTimeSecs:number
-  wasDueAtSecs:number
-  hint:string
+  preMarker: string
+  postMarker: string
+  preCloze: string
+  postCloze: string
+  answerTerm: string
+  answerCloze: string
+  answerDetailsFirstCharacter: string
+  answerDetails: string[]
+  props: StudyCardProps
+  easyDueAtSecs: number
+  fineDueAtSecs: number
+  hardDueAtSecs: number
+  nowTimeSecs: number
+  wasDueAtSecs: number
+  hint: string
 }
 
 interface LocalState {
-  questionContainerSize:ClientRect
-  answerContainerSize:ClientRect
-  paragraphAdjustment:number
-  clozeLeft:number
-  answerAdjustment:number
-  isOpen:boolean
+  questionContainerSize: ClientRect
+  answerContainerSize: ClientRect
+  paragraphAdjustment: number
+  clozeLeft: number
+  answerAdjustment: number
+  isOpen: boolean
 }
 
 interface StudyCardProps {
-  note:Note
-  clozeIdentifier:ClozeIdentifier
-  onRequestOpen?:(e:boolean)=>void
-  isOpen?:boolean
-  onAnswer?:(f:number)=>void
+  note: Note
+  clozeIdentifier: ClozeIdentifier
+  onRequestOpen?: (e: boolean)=>void
+  isOpen?: boolean
+  onAnswer?: (f: number)=>void
 }
 
 interface SpeakOptions {
-  text:string,
-  url?:string,
-  lang:string
+  text: string,
+  url?: string,
+  lang: string
 }
 
 var initialState = {
@@ -174,9 +191,9 @@ export class StudyCard extends React.Component<StudyCardProps, typeof initialSta
   readyForClozeAdjustment = false;
   resizeSubject = new Rx.Subject<any>();
   onResize = () => this.resizeSubject.onNext(null);
-  audioCache = {} as {[k:string]:HTMLAudioElement};
+  audioCache = {} as {[k: string]: HTMLAudioElement};
 
-  getAudio = (url:string) => {
+  getAudio = (url: string) => {
     var audioCache = this.audioCache;
     return (audioCache[url] = audioCache[url] || new Audio(url));
   };
@@ -185,7 +202,7 @@ export class StudyCard extends React.Component<StudyCardProps, typeof initialSta
     this.adjustParagraph();
   };
 
-  componentDidUpdate(prevProps:StudyCardProps, prevState:typeof initialState) {
+  componentDidUpdate(prevProps: StudyCardProps, prevState: typeof initialState) {
     if (prevState.isOpen != this.state.isOpen) {
       this.adjustParagraph();
     }
@@ -212,7 +229,7 @@ export class StudyCard extends React.Component<StudyCardProps, typeof initialSta
     this.resizeSubject.onCompleted();
   }
 
-  componentWillReceiveProps(props:StudyCardProps) {
+  componentWillReceiveProps(props: StudyCardProps) {
     if (props.onRequestOpen !== null) {
       var nextState = shallowCopy(this.state);
       nextState.isOpen = props.isOpen;
@@ -248,15 +265,19 @@ export class StudyCard extends React.Component<StudyCardProps, typeof initialSta
 
     var wasDueAtSecs = cloze.schedule.dueAtMinutes * 60;
     var hint = term.hint;
+    var trainSpeaking = false;
 
     var speakOptions = null as SpeakOptions;
-    if (answerCloze.indexOf("speak:") == 0) {
+    var speakMatch = cloze.speakMatch();
+    if (speakMatch) {
       var speakParams = answerCloze.split(":");
       speakOptions = {
         text: preMarker + term.original + postMarker,
         lang: speakParams[1],
         url: speakParams.slice(2).join(":")
-      }
+      };
+
+      trainSpeaking = speakMatch[1] === "train";
 
       answerDetailsFirstCharacter = speakOptions.text[0];
       answerDetails = (speakOptions.text.slice(1) + "\n\n" + answerCleaned).split("\n");
@@ -278,14 +299,15 @@ export class StudyCard extends React.Component<StudyCardProps, typeof initialSta
       nowTimeSecs,
       wasDueAtSecs,
       hint,
+      trainSpeaking,
     };
   }
 
-  questionContainer:HTMLElement;
-  questionSpan:HTMLElement;
-  questionAdjustment:HTMLElement;
-  answerContainer:HTMLElement;
-  answerSpan:HTMLElement;
+  questionContainer: HTMLElement;
+  questionSpan: HTMLElement;
+  questionAdjustment: HTMLElement;
+  answerContainer: HTMLElement;
+  answerSpan: HTMLElement;
 
   adjustParagraph() {
     var nextState = shallowCopy(this.state);
@@ -301,7 +323,8 @@ export class StudyCard extends React.Component<StudyCardProps, typeof initialSta
       var questionHeight = questionContainerSize.height;
       var verCenterAbsolute = (questionHeight - questionSpanSize.height) / 2;
       var verCenterCur = (questionSpanSize.top - questionContainerSize.top);
-      var newAdjustment = (((paragraphAdjustment + (verCenterAbsolute - verCenterCur)) % questionHeight) + questionHeight) % questionHeight;
+      var newAdjustment = (((paragraphAdjustment + (verCenterAbsolute - verCenterCur)) %
+        questionHeight) + questionHeight) % questionHeight;
 
       nextState.paragraphAdjustment = newAdjustment;
       this.readyForClozeAdjustment = true;
@@ -341,9 +364,48 @@ export class StudyCard extends React.Component<StudyCardProps, typeof initialSta
     }
   };
 
-  triggerAnswer = (factor:number) => {
+  triggerAnswer = (factor: number) => {
     this.props.onAnswer(factor);
   };
+
+  renderDefinitionHeading(termText: string, clozeText: string) {
+    return <div>
+      <span style={answerTermStyles}>{termText}</span>
+      ---
+      <span style={answerClozeStyles}>{clozeText}</span>
+    </div>;
+  }
+
+  renderDueAtHeading(dueAtText: string) {
+    return <div>
+      <div>
+        was due {dueAtText}
+      </div>
+    </div>
+  }
+
+  renderAnswerBody(answerDetailsFirstCharacter: string, clozeId: string, answerDetails: string[],
+                   speakOptions: {text: string, lang: string}, trainSpeak: boolean,
+                   audio: HTMLAudioElement) {
+    var answerDetailsStyles = tap({} as CSSProperties)(s => {
+      var adjustment = this.state.answerAdjustment;
+
+      s.marginRight = css.Pixels.of(adjustment);
+    });
+
+    return <div key="answer" style={answerDetailsBlockStyles}
+                ref={(e) => this.answerContainer = e as any}>
+      <div style={answerDetailsStyles}>
+        { trainSpeak ? <div>
+          {this.renderSynthButtons(audio, speakOptions.text, speakOptions.lang)}
+        </div> : null }
+        <span ref={(e) => this.answerSpan = e as any}>
+                {answerDetailsFirstCharacter}
+              </span>
+        {answerDetails.map((d, i) => <span key={clozeId + "-" + i}>{d} <br/> </span>)}
+      </div>
+    </div>;
+  }
 
   render() {
     var questionOffsetSpan = tap({} as CSSProperties)(s => {
@@ -351,12 +413,6 @@ export class StudyCard extends React.Component<StudyCardProps, typeof initialSta
       s.height = css.Pixels.of(adjustment);
       s.width = css.Pixels.of(1);
       s.display = css.Display.INLINE_BLOCK;
-    });
-
-    var answerDetailsStyles = tap({} as CSSProperties)(s => {
-      var adjustment = this.state.answerAdjustment;
-
-      s.marginRight = css.Pixels.of(adjustment);
     });
 
     var questionContainerStyles = tap({} as CSSProperties)(s => {
@@ -373,7 +429,7 @@ export class StudyCard extends React.Component<StudyCardProps, typeof initialSta
       audio = this.getAudio(computedProps.speakOptions.url);
     }
 
-    var describeDueAt = (dueInSecs:number) =>
+    var describeDueAt = (dueInSecs: number) =>
       moment.duration((dueInSecs - computedProps.nowTimeSecs) * 1000).humanize(true);
 
     var clozeIdStr = this.props.clozeIdentifier.toString();
@@ -382,16 +438,8 @@ export class StudyCard extends React.Component<StudyCardProps, typeof initialSta
                 style={topContainerStyles}>
       <div style={headerStyles}>
         { this.state.isOpen && !computedProps.speakOptions
-          ? <div>
-          <span style={answerTermStyles}>{computedProps.answerTerm}</span>
-          ---
-          <span style={answerClozeStyles}>{computedProps.answerCloze}</span>
-        </div>
-          : <div>
-          <div>
-            was due {describeDueAt(computedProps.wasDueAtSecs)}
-          </div>
-        </div> }
+          ? this.renderDefinitionHeading(computedProps.answerTerm, computedProps.answerCloze)
+          : this.renderDueAtHeading(describeDueAt(computedProps.wasDueAtSecs)) }
       </div>
       <div onClick={(e) => { e.preventDefault(); this.triggerOpen(); }}
            onTouchTap={(e) => { e.preventDefault(); this.triggerOpen(); }}>
@@ -400,102 +448,33 @@ export class StudyCard extends React.Component<StudyCardProps, typeof initialSta
           key={clozeIdStr}
           heightGiven={flourishHeight + flourishMargin + headerHeight}
           style={{ textAlign: css.TextAlign.LEFT }}>
-          { this.state.isOpen
-            ? <div key="answer" style={answerDetailsBlockStyles}
-                   ref={(e) => this.answerContainer = e as any}>
-            <div style={answerDetailsStyles}>
-              <span ref={(e) => this.answerSpan = e as any}>
-                {computedProps.answerDetailsFirstCharacter}
-              </span>
-              {computedProps.answerDetails.map((d, i) => <span
-                key={clozeIdStr + "-" + i}>{d}
-                <br/>
-              </span>)}
-            </div>
-          </div>
-            : computedProps.speakOptions ? <div key="question" style={questionContainerStyles}
-                                                ref={(e) => this.questionContainer = e as any}>
-            <div style={questionOffsetSpan} ref={(e) => this.questionAdjustment = e as any}>
-            </div>
-            <div ref={(e) => this.questionSpan = e as any}
-                 style={{ display: css.Display.INLINE_BLOCK }}>
-              <button style={assign<any>({}, baseButtonStyles, { display: "inline-block" })}
-                      onTouchTap={(e) => { e.preventDefault(); e.stopPropagation(); speak(computedProps.speakOptions.text, computedProps.speakOptions.lang) }}
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation();  }}>
-                Synth
-              </button>
-
-              { audio ?
-                <button style={assign<any>({}, baseButtonStyles, { display: "inline-block"})}
-                        onTouchTap={(e) => { e.preventDefault(); e.stopPropagation(); audio.play() }}
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-                  Audio
-                </button> : null }
-            </div>
-          </div>
-            : <div key="question" style={questionContainerStyles}
-                   ref={(e) => this.questionContainer = e as any}>
-            <div style={questionOffsetSpan} ref={(e) => this.questionAdjustment = e as any}>
-            </div>
-            {computedProps.preMarker}
-            <span style={termStyles}>
-              {computedProps.preCloze}
-              <span style={clozeStyles} ref={(e) => this.questionSpan = e as any}>
-                ?
-              </span>
-              {computedProps.postCloze}
-            </span>
-            {computedProps.postMarker}
-          </div> }
+          { this.renderBody(computedProps.answerDetailsFirstCharacter,
+            computedProps.answerDetails,
+            computedProps.preMarker,
+            computedProps.preCloze,
+            computedProps.postCloze,
+            computedProps.postMarker,
+            computedProps.trainSpeaking,
+            computedProps.answerTerm,
+            computedProps.speakOptions,
+            clozeIdStr,
+            questionContainerStyles,
+            questionOffsetSpan,
+            audio) }
         </ScreenFitVerticalParagraph>
       </div>
       <div style={{ marginTop: css.Pixels.of(5) }}>
         { this.state.isOpen
           ? <div>
-          <button style={baseButtonStyles}
-                  onClick={(e:SyntheticEvent) => { e.stopPropagation(); this.triggerAnswer(HARD_FACTOR); }}>
-            Hard
-            <div className="only-desktop">
-              <div style={dueAtStyles}>
-                next&nbsp;
-                {describeDueAt(computedProps.hardDueAtSecs)}
-              </div>
-              <div style={shortcutKeyStyles}>a</div>
-            </div>
-          </button>
-          <button style={baseButtonStyles}
-                  onClick={(e:SyntheticEvent) => { e.stopPropagation(); this.triggerAnswer(FINE_FACTOR); }}>
-            Fine
-            <div className="only-desktop">
-              <div style={dueAtStyles}>
-                next&nbsp;
-                {describeDueAt(computedProps.fineDueAtSecs)}
-              </div>
-              <div style={shortcutKeyStyles}>s</div>
-            </div>
-          </button>
+          {this.renderAnswerButton(-HARD_FACTOR, "Hard",
+            describeDueAt(computedProps.hardDueAtSecs), "a")}
+          {this.renderAnswerButton(FINE_FACTOR, "Fine",
+            describeDueAt(computedProps.fineDueAtSecs), "s")}
           { !computedProps.speakOptions
-            ? <button style={baseButtonStyles}
-                      onClick={(e:SyntheticEvent) => { e.stopPropagation(); this.triggerAnswer(EASY_FACTOR); }}>
-            Easy
-            <div className="only-desktop">
-              <div style={dueAtStyles}>
-                next&nbsp;
-                {describeDueAt(computedProps.easyDueAtSecs)}
-              </div>
-              <div style={shortcutKeyStyles}>d</div>
-            </div>
-          </button>
-            : <button style={baseButtonStyles}
-                      onClick={(e:SyntheticEvent) => { e.stopPropagation(); this.triggerAnswer(SKIP_FACTOR); }}>
-            Skip
-            <div className="only-desktop">
-              <div style={dueAtStyles}>
-                next in 60 minutes
-              </div>
-              <div style={shortcutKeyStyles}>v</div>
-            </div>
-          </button> }
+            ? this.renderAnswerButton(EASY_FACTOR, "Easy",
+            describeDueAt(computedProps.easyDueAtSecs), "d")
+            : this.renderAnswerButton(SKIP_FACTOR, "Skip", "next in 60 minutes", "v")
+          }
         </div>
           : <div style={flourishContainerStyles}>
           <ScrollworkFlourish style={flourishStyles}></ScrollworkFlourish>
@@ -509,5 +488,116 @@ export class StudyCard extends React.Component<StudyCardProps, typeof initialSta
         </div> }
       </div>
     </div >
+  }
+
+  private renderSpeakQuestionBody(questionContainerStyles: CSSProperties,
+                                  audio: HTMLAudioElement,
+                                  speakText: string,
+                                  speakLanguage: string,
+                                  trainSpeak: boolean,
+                                  answerTerm: string,
+                                  questionOffsetSpan: CSSProperties) {
+    var parts = speakText.split(answerTerm);
+
+    if (trainSpeak) {
+
+      return <div key="question" style={questionContainerStyles}
+                  ref={(e) => this.questionContainer = e as any}>
+        <div style={questionOffsetSpan} ref={(e) => this.questionAdjustment = e as any}>
+        </div>
+        <div ref={(e) => this.questionSpan = e as any}
+             style={{ display: css.Display.INLINE_BLOCK }}>
+          { trainSpeak ? <div style={speakTrainingStyles}>
+            {parts[0]} <span style={speakClozeStyles}>{answerTerm}</span> {parts[1]}
+          </div> : null }
+        </div>
+      </div>
+    }
+
+    return <div key="question" style={questionContainerStyles}
+                ref={(e) => this.questionContainer = e as any}>
+      <div style={questionOffsetSpan} ref={(e) => this.questionAdjustment = e as any}>
+      </div>
+      <div ref={(e) => this.questionSpan = e as any} style={{ display: css.Display.INLINE_BLOCK }}>
+        { this.renderSynthButtons(audio, speakText, speakLanguage) }
+      </div>
+    </div>
+  }
+
+  private renderSynthButtons(audio: HTMLAudioElement, speakText: string, speakLanguage: string) {
+    return <span>
+        <button style={assign<any>({}, baseButtonStyles, { display: "inline-block" })}
+                onTouchTap={(e) => { e.preventDefault(); e.stopPropagation(); speak(speakText, speakLanguage) }}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation();  }}>
+          Synth
+        </button>
+
+      { audio ?
+        <button style={assign<any>({}, baseButtonStyles, { display: "inline-block" })}
+                onTouchTap={(e) => { e.preventDefault(); e.stopPropagation(); audio.play() }}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+          Audio
+        </button> : null }
+    </span>
+  }
+
+  private renderBody(answerDetailsFirstCharacter: string, answerDetails: string[],
+                     preMarker: string, preCloze: string, postCloze: string, postMarker: string,
+                     trainSpeak: boolean, answerTerm: string,
+                     speakOptions: {text: string, lang: string},
+                     clozeIdStr: string, questionContainerStyles: CSSProperties,
+                     questionOffsetSpan: CSSProperties, audio: HTMLAudioElement) {
+    if (this.state.isOpen) {
+      return this.renderAnswerBody(
+        answerDetailsFirstCharacter,
+        clozeIdStr,
+        answerDetails, speakOptions, trainSpeak, audio);
+    }
+
+    if (speakOptions) {
+      return this.renderSpeakQuestionBody(questionContainerStyles,
+        audio, speakOptions.text, speakOptions.lang, trainSpeak,
+        answerTerm, questionOffsetSpan);
+    }
+
+    return this.renderNonSpeakQuestionBody(questionContainerStyles,
+      questionOffsetSpan,
+      preMarker,
+      preCloze,
+      postCloze,
+      postMarker);
+  }
+
+  private renderNonSpeakQuestionBody(questionContainerStyles: CSSProperties,
+                                     questionOffsetSpan: CSSProperties, preMarker: string,
+                                     preCloze: string, postCloze: string, postMarker: string) {
+    return  <div key="question" style={questionContainerStyles}
+                 ref={(e) => this.questionContainer = e as any}>
+      <div style={questionOffsetSpan} ref={(e) => this.questionAdjustment = e as any}>
+      </div>
+      {preMarker}
+      <span style={termStyles}>
+              {preCloze}
+        <span style={clozeStyles} ref={(e) => this.questionSpan = e as any}>
+                ?
+              </span>
+        {postCloze}
+            </span>
+      {postMarker}
+    </div>
+  }
+
+  private renderAnswerButton(factor: number, name: string, dueAtStr: string, shortcut: string) {
+    return  <button style={baseButtonStyles}
+                    onClick={(e:SyntheticEvent) => { e.stopPropagation(); this.triggerAnswer(factor); }}>
+      {name}
+      <div className="only-desktop">
+        <div style={dueAtStyles}>
+          next&nbsp;
+          {dueAtStr}
+        </div>
+        { shortcut ? <div style={shortcutKeyStyles}>{shortcut}</div> : null }
+      </div>
+    </button>
   }
 }
