@@ -51,7 +51,7 @@ export class FetchScheduleService implements ServiceHandler<FetchScheduleRequest
           Math.floor(now.unix()), req.requestedNum, tagGuids).toArray();
       });
     }).flatMap((scheduleRows) => {
-      var expiration = Math.floor(now.add(1, 'minutes').unix());
+      var expiration = Math.floor(now.add(1, 'hour').unix());
       res.expires = expiration;
       scheduleRows.sort((a, b) => (a.clozeIdentifier < b.clozeIdentifier ? -1 : 1));
       scheduleRows.forEach(scheduleRow => {
